@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, increment } from 'firebase/firestore';
 import { Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
 import './Admin.css';
 
@@ -98,9 +98,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUpdateWithdrawal = async (id, newStatus) => {
+  const handleUpdateWithdrawal = async (id, newStatus, uid, amount) => {
     try {
       await updateDoc(doc(db, 'withdrawals', id), { status: newStatus });
+      
+      if (newStatus === 'Rejected' && uid && amount) {
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, { coins: increment(amount) });
+      }
+      
       setWithdrawalsList(withdrawalsList.map(w => w.id === id ? {...w, status: newStatus} : w));
     } catch(e) {
       console.error(e);
@@ -147,8 +153,8 @@ const AdminDashboard = () => {
                     <td className="action-cell">
                       {w.status === 'Pending' && (
                         <>
-                          <button className="btn-approve" onClick={() => handleUpdateWithdrawal(w.id, 'Approved')}><CheckCircle size={16}/></button>
-                          <button className="btn-reject" onClick={() => handleUpdateWithdrawal(w.id, 'Rejected')}><XCircle size={16}/></button>
+                          <button className="btn-approve" onClick={() => handleUpdateWithdrawal(w.id, 'Approved', w.uid, w.amount)}><CheckCircle size={16}/></button>
+                          <button className="btn-reject" onClick={() => handleUpdateWithdrawal(w.id, 'Rejected', w.uid, w.amount)}><XCircle size={16}/></button>
                         </>
                       )}
                     </td>
