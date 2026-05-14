@@ -5,8 +5,8 @@ import './Products.css';
 const MOCK_PRODUCTS = [
   {
     id: 1,
-    title: 'iPhone 15 Pro Max',
-    prizeAmount: '₹1,50,000',
+    title: 'BookMyShow Voucher',
+    prizeAmount: '₹200',
     drawDate: 'Oct 30, 2026',
     ticketsEarned: 3,
     ticketsRequired: 6,
@@ -15,8 +15,8 @@ const MOCK_PRODUCTS = [
   },
   {
     id: 2,
-    title: 'Sony PlayStation 5',
-    prizeAmount: '₹50,000',
+    title: 'UPI Cash',
+    prizeAmount: '₹150',
     drawDate: 'Nov 05, 2026',
     ticketsEarned: 0,
     ticketsRequired: 5,

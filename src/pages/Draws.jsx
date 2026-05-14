@@ -5,7 +5,7 @@ import './Draws.css';
 const MOCK_DRAWS = [
   {
     id: 1,
-    title: 'Samsung S24 Ultra',
+    title: 'BookMyShow ₹200 Voucher',
     date: 'Oct 15, 2026',
     winner: 'Rahul M.',
     winnerPhone: 'XXXXX-XX892',
@@ -13,7 +13,7 @@ const MOCK_DRAWS = [
   },
   {
     id: 2,
-    title: 'Boat Smartwatch',
+    title: 'UPI ₹150 Cash',
     date: 'Oct 10, 2026',
     winner: 'Priya K.',
     winnerPhone: 'XXXXX-XX431',

@@ -91,11 +91,11 @@ const AdminDashboard = () => {
             <form className="admin-form" onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
                 <label>Product Title</label>
-                <input type="text" placeholder="e.g. iPhone 15 Pro Max" required />
+                <input type="text" placeholder="e.g. BookMyShow Voucher" required />
               </div>
               <div className="form-group">
                 <label>Prize Amount/Value</label>
-                <input type="text" placeholder="e.g. ₹1,50,000" required />
+                <input type="text" placeholder="e.g. ₹200" required />
               </div>
               <div className="form-group">
                 <label>Draw Date</label>
@@ -122,7 +122,7 @@ const AdminDashboard = () => {
             <form className="admin-form" onSubmit={(e) => e.preventDefault()}>
               <div className="form-group">
                 <label>Product Name</label>
-                <input type="text" placeholder="e.g. Samsung S24 Ultra" required />
+                <input type="text" placeholder="e.g. BookMyShow ₹200 Voucher" required />
               </div>
               <div className="form-group">
                 <label>Winner Name</label>
@@ -165,8 +165,8 @@ const AdminDashboard = () => {
               <tbody>
                 <tr>
                   <td>Rahul M.</td>
-                  <td>Samsung S24</td>
-                  <td>Delhi, IN</td>
+                  <td>BookMyShow ₹200</td>
+                  <td>rohan@upi</td>
                   <td><span className="status-badge processing">Processing</span></td>
                   <td className="action-cell">
                     <button className="btn-approve" title="Mark Shipped"><CheckCircle size={16}/></button>
@@ -175,8 +175,8 @@ const AdminDashboard = () => {
                 </tr>
                 <tr>
                   <td>Priya K.</td>
-                  <td>Boat Watch</td>
-                  <td>Mumbai, IN</td>
+                  <td>UPI ₹150 Cash</td>
+                  <td>priya@oksbi</td>
                   <td><span className="status-badge shipped">Shipped</span></td>
                   <td className="action-cell">
                     <button className="btn-approve" title="Mark Claimed"><CheckCircle size={16}/></button>
