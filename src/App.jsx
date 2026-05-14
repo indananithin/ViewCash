@@ -35,7 +35,7 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (!user.isAdmin) {
+  if (user.isAdmin !== true) {
     return <Navigate to="/" replace />; // Redirect non-admins to home
   }
   

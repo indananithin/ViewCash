@@ -38,7 +38,7 @@ const Profile = () => {
             <div className="menu-icon"><Settings size={20} /></div>
             <span>Settings</span>
           </div>
-          {user?.isAdmin && (
+          {user?.isAdmin === true && (
             <div className="menu-item" onClick={() => navigate('/admin')}>
               <div className="menu-icon"><ShieldAlert size={20} /></div>
               <span>Admin Panel</span>

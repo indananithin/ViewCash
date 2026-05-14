@@ -3,14 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// TODO: Replace with your actual Firebase config from the Firebase Console
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDNfaQfPP4YnoqZ_Ysdm0nyvEjYlE6RKZ0",
+  authDomain: "view-cash-803e8.firebaseapp.com",
+  projectId: "view-cash-803e8",
+  storageBucket: "view-cash-803e8.firebasestorage.app",
+  messagingSenderId: "806458212655",
+  appId: "1:806458212655:web:25b8690dc7740e26be61da"
 };
 
 // Initialize Firebase

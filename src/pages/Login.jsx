@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { auth } from '../firebase/config';
+import { RecaptchaVerifier } from 'firebase/auth';
 import { Phone, Mail, KeyRound } from 'lucide-react';
 import './Login.css';
 
@@ -12,6 +14,23 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { loginWithPhone, verifyOtp, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Initialize Recaptcha once when the component mounts
+    if (!window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {}
+        });
+      } catch (err) {
+        console.error("Recaptcha Init Error", err);
+      }
+    }
+    
+    // Do not clear it on unmount because if the user navigates away and back, it can cause issues if not fully cleared.
+    // Firebase handles singleton instances internally.
+  }, []);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();

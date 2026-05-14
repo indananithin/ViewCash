@@ -57,21 +57,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const setupRecaptcha = (containerId) => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'invisible',
-        callback: (response) => {
-          // reCAPTCHA solved
-        }
-      });
-    }
+    // We now initialize this in Login.jsx useEffect to prevent React DOM issues
   };
 
   const loginWithPhone = async (phoneNumber, containerId) => {
     setLoading(true);
     try {
-      setupRecaptcha(containerId);
       const appVerifier = window.recaptchaVerifier;
+      if (!appVerifier) {
+        throw new Error("Recaptcha not initialized. Please refresh the page.");
+      }
       // Add +91 if not present for India, assume it's included or passed correctly
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
