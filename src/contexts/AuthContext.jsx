@@ -30,17 +30,27 @@ export const AuthProvider = ({ children }) => {
             setUser({ ...firebaseUser, ...userDoc.data() });
           } else {
             // Create a new user profile in Firestore
+            let pendingData = {};
+            try { 
+              const saved = sessionStorage.getItem('viewCashPendingSignUp');
+              if (saved) pendingData = JSON.parse(saved);
+            } catch(e){}
+
             const newUser = {
               uid: firebaseUser.uid,
-              name: firebaseUser.displayName || 'User',
-              phone: firebaseUser.phoneNumber || '',
+              name: pendingData.name || 'User',
+              phone: pendingData.phone || '',
               coins: 100, // Starting coins
               tickets: 0,
               isAdmin: false,
               deviceId: generateDeviceId(),
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              appliedReferral: pendingData.referralCode || ''
             };
+            
             await setDoc(userDocRef, newUser);
+            sessionStorage.removeItem('viewCashPendingSignUp');
+            
             setUser({ ...firebaseUser, ...newUser });
           }
         } catch (error) {
@@ -56,10 +66,16 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  const loginWithEmail = async (email, password, isSignUp = false) => {
+  const loginWithEmail = async (email, password, isSignUp = false, extraData = {}) => {
     setLoading(true);
     try {
       if (isSignUp) {
+        // Temporarily store the name and referral code so onAuthStateChanged can pick it up
+        sessionStorage.setItem('viewCashPendingSignUp', JSON.stringify({
+          phone: email.split('@')[0],
+          name: extraData.name,
+          referralCode: extraData.referralCode
+        }));
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);

@@ -6,6 +6,8 @@ import './Login.css';
 
 const Login = () => {
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
@@ -27,10 +29,15 @@ const Login = () => {
       setError('Please enter a valid 10-digit mobile number and a password of at least 6 characters.');
       return;
     }
+    
+    if (isSignUp && !name) {
+      setError('Please enter your name.');
+      return;
+    }
 
     const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
     if (savedPhone && savedPhone !== phone) {
-      setError('Strict Login Enforced: This device is already permanently bound to another mobile number.');
+      setError('Strict Login Enforced: You can only login with your original registered number (' + savedPhone + ') on this device.');
       return;
     }
     
@@ -42,9 +49,9 @@ const Login = () => {
     setIsSubmitting(true);
     setError('');
     
-    // We convert the phone number to an email structure so Firebase accepts it without billing
     const fakeEmail = `${phone}@viewcash.app`;
-    const result = await loginWithEmail(fakeEmail, password, isSignUp);
+    // Pass extra data (name and referral) using the 4th parameter of loginWithEmail
+    const result = await loginWithEmail(fakeEmail, password, isSignUp, { name, referralCode });
     
     if (result.success) {
       localStorage.setItem('viewCashRegisteredPhone', phone);
@@ -70,6 +77,20 @@ const Login = () => {
         {error && <div className="error-message">{error}</div>}
         
         <form onSubmit={handleAuth} className="login-form">
+          {isSignUp && (
+            <div className="input-group">
+              <span className="input-icon">👤</span>
+              <input 
+                type="text" 
+                placeholder="Enter Full Name" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isSubmitting}
+                required={isSignUp}
+              />
+            </div>
+          )}
+
           <div className="input-group">
             <Phone size={20} className="input-icon" />
             <input 
@@ -77,10 +98,15 @@ const Login = () => {
               placeholder="Enter Mobile Number" 
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              disabled={isSubmitting || (localStorage.getItem('viewCashRegisteredPhone') && localStorage.getItem('viewCashRegisteredPhone') !== phone)}
+              disabled={isSubmitting}
               required
             />
           </div>
+          {isSignUp && (
+            <p style={{fontSize: '11px', color: 'var(--primary-orange)', marginTop: '-10px', marginBottom: '15px', lineHeight: '1.2'}}>
+              * Note: Please make sure to provide your active WhatsApp number. We use this to contact you for settling your withdrawal payments.
+            </p>
+          )}
 
           <div className="input-group">
             <KeyRound size={20} className="input-icon" />
@@ -93,6 +119,19 @@ const Login = () => {
               required
             />
           </div>
+
+          {isSignUp && (
+            <div className="input-group">
+              <span className="input-icon">🎁</span>
+              <input 
+                type="text" 
+                placeholder="Referral Code (Optional)" 
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
+          )}
           
           <button 
             type="submit" 
