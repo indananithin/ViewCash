@@ -8,6 +8,11 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <div className="profile-container page-container">
       <div className="profile-header-card">
@@ -50,7 +55,7 @@ const Profile = () => {
           </div>
         </div>
 
-        <button className="logout-btn" onClick={logout}>
+        <button className="logout-btn" onClick={handleLogout}>
           <LogOut size={20} />
           Logout
         </button>

@@ -1,50 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, KeyRound, UserPlus, LogIn } from 'lucide-react';
+import { Phone, KeyRound } from 'lucide-react';
 import './Login.css';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailAuth = async (e) => {
+  useEffect(() => {
+    const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
+    if (savedPhone) {
+      setPhone(savedPhone);
+      setIsSignUp(false);
+    }
+  }, []);
+
+  const handleAuth = async (e) => {
     e.preventDefault();
-    if (!email || password.length < 6) {
-      setError('Please enter a valid email and a password of at least 6 characters.');
+    if (!phone || phone.length < 10 || password.length < 6) {
+      setError('Please enter a valid 10-digit mobile number and a password of at least 6 characters.');
+      return;
+    }
+
+    const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
+    if (savedPhone && savedPhone !== phone) {
+      setError('Strict Login Enforced: This device is already permanently bound to another mobile number.');
+      return;
+    }
+    
+    if (isSignUp && savedPhone) {
+      setError('You already have an account on this device. Please login instead.');
       return;
     }
     
     setIsSubmitting(true);
     setError('');
     
-    const result = await loginWithEmail(email, password, isSignUp);
+    // We convert the phone number to an email structure so Firebase accepts it without billing
+    const fakeEmail = `${phone}@viewcash.app`;
+    const result = await loginWithEmail(fakeEmail, password, isSignUp);
     
     if (result.success) {
+      localStorage.setItem('viewCashRegisteredPhone', phone);
       navigate('/');
     } else {
-      // Friendly error mapping
       let msg = result.error || 'Authentication Failed';
-      if (msg.includes('auth/invalid-credential')) msg = 'Incorrect email or password.';
-      if (msg.includes('auth/email-already-in-use')) msg = 'An account already exists with this email.';
+      if (msg.includes('auth/invalid-credential')) msg = 'Incorrect mobile number or password.';
+      if (msg.includes('auth/email-already-in-use')) msg = 'An account already exists with this mobile number.';
       setError(msg);
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsSubmitting(true);
-    setError('');
-    const result = await loginWithGoogle();
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError('Google Login Failed. Ensure "localhost" is an authorized domain in Firebase Console.');
       setIsSubmitting(false);
     }
   };
@@ -60,15 +69,15 @@ const Login = () => {
       <div className="login-card">
         {error && <div className="error-message">{error}</div>}
         
-        <form onSubmit={handleEmailAuth} className="login-form">
+        <form onSubmit={handleAuth} className="login-form">
           <div className="input-group">
-            <Mail size={20} className="input-icon" />
+            <Phone size={20} className="input-icon" />
             <input 
-              type="email" 
-              placeholder="Enter Email Address" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isSubmitting}
+              type="tel" 
+              placeholder="Enter Mobile Number" 
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={isSubmitting || (localStorage.getItem('viewCashRegisteredPhone') && localStorage.getItem('viewCashRegisteredPhone') !== phone)}
               required
             />
           </div>
@@ -103,24 +112,11 @@ const Login = () => {
             {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
           </button>
         </div>
-
-        <div className="divider">
-          <span>OR</span>
-        </div>
-
-        <button 
-          onClick={handleGoogleLogin}
-          className="btn-outline"
-          disabled={isSubmitting}
-        >
-          <Mail size={20} />
-          Continue with Google
-        </button>
       </div>
 
       <div className="security-notice">
-        <p>🔒 Secure Login</p>
-        <small>One account per device policy is enforced to ensure fair rewards.</small>
+        <p>🔒 Strict Login Enforced</p>
+        <small>One account per device policy is active. You cannot create multiple accounts on this device.</small>
       </div>
     </div>
   );
