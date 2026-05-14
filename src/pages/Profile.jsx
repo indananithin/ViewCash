@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { User, LogOut, Settings, HelpCircle, Shield, Share2, ShieldAlert, Edit2, Check } from 'lucide-react';
 import './Profile.css';
 
@@ -13,6 +13,7 @@ const Profile = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   const handleLogout = async () => {
     await logout();
@@ -20,18 +21,31 @@ const Profile = () => {
   };
 
   const handleSaveName = async () => {
+    setNameError('');
     if (!newName.trim() || newName === user?.name) {
       setIsEditingName(false);
       return;
     }
     setIsSaving(true);
     try {
+      // Check if name is already taken
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('name', '==', newName));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        setNameError('This name is already taken.');
+        setIsSaving(false);
+        return;
+      }
+
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { name: newName });
       setUser({ ...user, name: newName });
       setIsEditingName(false);
     } catch (err) {
       console.error("Error updating name:", err);
+      setNameError('Error updating name.');
     } finally {
       setIsSaving(false);
     }
@@ -45,18 +59,21 @@ const Profile = () => {
         </div>
         
         {isEditingName ? (
-          <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px'}}>
-            <input 
-              type="text" 
-              value={newName} 
-              onChange={(e) => setNewName(e.target.value)} 
-              autoFocus
-              style={{padding: '5px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '16px'}}
-              disabled={isSaving}
-            />
-            <button onClick={handleSaveName} disabled={isSaving} style={{background: 'var(--primary-orange)', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '5px', cursor: 'pointer'}}>
-              {isSaving ? '...' : <Check size={16} />}
-            </button>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10px'}}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+              <input 
+                type="text" 
+                value={newName} 
+                onChange={(e) => setNewName(e.target.value.toUpperCase())} 
+                autoFocus
+                style={{padding: '5px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '16px'}}
+                disabled={isSaving}
+              />
+              <button onClick={handleSaveName} disabled={isSaving} style={{background: 'var(--primary-orange)', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '5px', cursor: 'pointer'}}>
+                {isSaving ? '...' : <Check size={16} />}
+              </button>
+            </div>
+            {nameError && <p style={{color: 'red', fontSize: '12px', marginTop: '5px'}}>{nameError}</p>}
           </div>
         ) : (
           <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}} onClick={() => setIsEditingName(true)} title="Click to edit name">

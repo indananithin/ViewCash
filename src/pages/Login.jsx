@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Phone, KeyRound } from 'lucide-react';
 import './Login.css';
 
@@ -48,6 +50,21 @@ const Login = () => {
     
     setIsSubmitting(true);
     setError('');
+
+    if (isSignUp) {
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('name', '==', name));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          setError('This username is already taken. Please choose another one.');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking username uniqueness:", err);
+      }
+    }
     
     const fakeEmail = `${phone}@viewcash.app`;
     // Pass extra data (name and referral) using the 4th parameter of loginWithEmail
@@ -84,7 +101,7 @@ const Login = () => {
                 type="text" 
                 placeholder="Enter Full Name" 
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value.toUpperCase())}
                 disabled={isSubmitting}
                 required={isSignUp}
               />
