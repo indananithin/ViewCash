@@ -69,8 +69,8 @@ const Home = () => {
         </div>
         <div className="announcement-card">
           <div className="announcement-content">
-            <h4>New iPhone 15 Draw!</h4>
-            <p>Participate now with just 6 tickets to win a brand new iPhone 15.</p>
+            <h4>New BookMyShow ₹200 Voucher Draw!</h4>
+            <p>Participate now with just 6 tickets to win a brand new BookMyShow voucher.</p>
           </div>
         </div>
         <div className="announcement-card success">

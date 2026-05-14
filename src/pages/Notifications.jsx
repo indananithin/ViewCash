@@ -13,7 +13,7 @@ const MOCK_NOTIFICATIONS = [
   },
   {
     id: 2,
-    title: 'New iPhone 15 Draw',
+    title: 'New BookMyShow Voucher Draw',
     message: 'A new product has been added! Start earning tickets now to win.',
     time: 'Yesterday',
     type: 'promo',
@@ -22,7 +22,7 @@ const MOCK_NOTIFICATIONS = [
   {
     id: 3,
     title: 'Draw Results Announced',
-    message: 'The Boat Smartwatch lucky draw results are out. Check if you won!',
+    message: 'The UPI ₹150 Cash lucky draw results are out. Check if you won!',
     time: 'Oct 10, 2026',
     type: 'alert',
     icon: <Trophy />
