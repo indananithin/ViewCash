@@ -3,10 +3,10 @@ import { auth, db } from '../firebase/config';
 import { 
   onAuthStateChanged, 
   signInWithPhoneNumber, 
-  RecaptchaVerifier, 
-  signOut,
   GoogleAuthProvider,
-  signInWithRedirect
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -56,37 +56,17 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  const setupRecaptcha = (containerId) => {
-    // We now initialize this in Login.jsx useEffect to prevent React DOM issues
-  };
-
-  const loginWithPhone = async (phoneNumber, containerId) => {
+  const loginWithEmail = async (email, password, isSignUp = false) => {
     setLoading(true);
     try {
-      const appVerifier = window.recaptchaVerifier;
-      if (!appVerifier) {
-        throw new Error("Recaptcha not initialized. Please refresh the page.");
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
       }
-      // Add +91 if not present for India, assume it's included or passed correctly
-      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      window.confirmationResult = confirmationResult;
       return { success: true };
     } catch (error) {
-      console.error("Phone Auth Error:", error);
-      return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const verifyOtp = async (otp) => {
-    setLoading(true);
-    try {
-      const result = await window.confirmationResult.confirm(otp);
-      return { success: true, user: result.user };
-    } catch (error) {
-      console.error("OTP Error:", error);
+      console.error("Email Auth Error:", error);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -97,10 +77,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
-      // It will redirect the page, so no need to return success here.
-      // onAuthStateChanged will pick it up when the page reloads.
-      return { success: true };
+      const result = await signInWithPopup(auth, provider);
+      return { success: true, user: result.user };
     } catch (error) {
       console.error("Google Auth Error:", error);
       return { success: false, error: error.message };
@@ -132,8 +110,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     setUser, // Expose setUser for local updates
-    loginWithPhone,
-    verifyOtp,
+    loginWithEmail,
     loginWithGoogle,
     logout,
     loading,
