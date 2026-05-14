@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Settings, HelpCircle, Shield, Share2, ShieldAlert } from 'lucide-react';
+import { db } from '../firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
+import { User, LogOut, Settings, HelpCircle, Shield, Share2, ShieldAlert, Edit2, Check } from 'lucide-react';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState(user?.name || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim() || newName === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { name: newName });
+      setUser({ ...user, name: newName });
+      setIsEditingName(false);
+    } catch (err) {
+      console.error("Error updating name:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -19,7 +43,26 @@ const Profile = () => {
         <div className="profile-avatar-large">
           {user?.name?.charAt(0) || 'U'}
         </div>
-        <h3>{user?.name || 'User'}</h3>
+        
+        {isEditingName ? (
+          <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px'}}>
+            <input 
+              type="text" 
+              value={newName} 
+              onChange={(e) => setNewName(e.target.value)} 
+              autoFocus
+              style={{padding: '5px 10px', borderRadius: '5px', border: '1px solid #ccc', fontSize: '16px'}}
+              disabled={isSaving}
+            />
+            <button onClick={handleSaveName} disabled={isSaving} style={{background: 'var(--primary-orange)', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '5px', cursor: 'pointer'}}>
+              {isSaving ? '...' : <Check size={16} />}
+            </button>
+          </div>
+        ) : (
+          <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}} onClick={() => setIsEditingName(true)} title="Click to edit name">
+            {user?.name || 'User'} <Edit2 size={14} color="#666" />
+          </h3>
+        )}
         <p className="phone-number">{user?.phone || 'No phone linked'}</p>
         <div className="device-badge">
           <Shield size={12} /> Device Locked
@@ -28,9 +71,9 @@ const Profile = () => {
 
       <div className="profile-menu">
         <div className="menu-group">
-          <div className="menu-item">
+          <div className="menu-item" onClick={() => setIsEditingName(true)}>
             <div className="menu-icon"><User size={20} /></div>
-            <span>Edit Profile</span>
+            <span>Edit Profile (Name)</span>
           </div>
           <div className="menu-item" onClick={() => navigate('/referral')}>
             <div className="menu-icon"><Share2 size={20} /></div>
