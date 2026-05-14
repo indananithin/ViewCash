@@ -8,6 +8,11 @@ const Home = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <div className="home-container page-container">
       {/* Header Profile Section */}
@@ -26,7 +31,7 @@ const Home = () => {
             <Bell size={24} />
             <span className="badge">2</span>
           </button>
-          <button className="icon-btn" onClick={logout} title="Logout">
+          <button className="icon-btn" onClick={handleLogout} title="Logout">
             <LogOut size={24} />
           </button>
         </div>
@@ -51,7 +56,7 @@ const Home = () => {
             <Gift size={28} color="#eab308" />
           </div>
           <h3>Refer & Earn</h3>
-          <p>Get 50 Coins</p>
+          <p>Get 5 Coins</p>
         </div>
         <div className="action-box" onClick={() => navigate('/products')}>
           <div className="action-icon gift-bg">

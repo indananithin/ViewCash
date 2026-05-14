@@ -25,7 +25,7 @@ const Referral = () => {
       try {
         await navigator.share({
           title: 'Join ViewCash',
-          text: `Use my referral code ${referralCode} to get 15 bonus coins on ViewCash!`,
+          text: `Use my referral code ${referralCode} to get 5 bonus coins on ViewCash!`,
           url: 'https://viewcash.app',
         });
       } catch (err) {
@@ -75,19 +75,19 @@ const Referral = () => {
       // Update current user
       const currentUserRef = doc(db, 'users', user.uid);
       await updateDoc(currentUserRef, {
-        coins: increment(15),
+        coins: increment(5),
         referredBy: referrerDoc.id
       });
 
       // Update referrer
       const referrerRef = doc(db, 'users', referrerDoc.id);
       await updateDoc(referrerRef, {
-        coins: increment(15),
+        coins: increment(5),
         referralsCount: increment(1)
       });
 
-      setUser({ ...user, coins: user.coins + 15, referredBy: referrerDoc.id });
-      setStatusMsg('Referral code applied! You got 15 coins.');
+      setUser({ ...user, coins: user.coins + 5, referredBy: referrerDoc.id });
+      setStatusMsg('Referral code applied! You got 5 coins.');
       setInputCode('');
     } catch (error) {
       console.error(error);
@@ -106,8 +106,8 @@ const Referral = () => {
         <div className="hero-icon">
           <GiftIcon />
         </div>
-        <h3>Get 15 Coins Per Friend</h3>
-        <p>When your friend signs up and watches their first ad, you both get 15 coins!</p>
+        <h3>Get 5 Coins Per Friend</h3>
+        <p>When your friend signs up and watches their first ad, you both get 5 coins!</p>
       </div>
 
       <div className="referral-code-section">
@@ -126,7 +126,7 @@ const Referral = () => {
 
       <div className="apply-code-section" style={{marginTop: '20px', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px'}}>
         <h3 style={{fontSize: '16px', marginBottom: '12px'}}>Have a referral code?</h3>
-        {statusMsg && <p style={{fontSize: '14px', marginBottom: '10px', color: statusMsg.includes('got 15 coins') ? 'green' : 'red'}}>{statusMsg}</p>}
+        {statusMsg && <p style={{fontSize: '14px', marginBottom: '10px', color: statusMsg.includes('got 5 coins') ? 'green' : 'red'}}>{statusMsg}</p>}
         <div style={{display: 'flex', gap: '10px'}}>
           <input 
             type="text" 
@@ -155,7 +155,7 @@ const Referral = () => {
           <div className="stat-box">
             <div className="stat-icon-ref coin-bg">₹</div>
             <div className="stat-content">
-              <h4>{(user?.referralsCount || 0) * 15}</h4>
+              <h4>{(user?.referralsCount || 0) * 5}</h4>
               <p>Coins Earned</p>
             </div>
           </div>
