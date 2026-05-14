@@ -6,7 +6,7 @@ import {
   RecaptchaVerifier, 
   signOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithRedirect
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -97,8 +97,10 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return { success: true, user: result.user };
+      await signInWithRedirect(auth, provider);
+      // It will redirect the page, so no need to return success here.
+      // onAuthStateChanged will pick it up when the page reloads.
+      return { success: true };
     } catch (error) {
       console.error("Google Auth Error:", error);
       return { success: false, error: error.message };

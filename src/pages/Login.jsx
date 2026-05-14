@@ -138,8 +138,7 @@ const Login = () => {
           </form>
         )}
 
-        {/* Invisible Recaptcha Container */}
-        <div id="recaptcha-container"></div>
+        {/* Recaptcha Container is now in index.html to prevent React unmounting errors */}
 
         <div className="divider">
           <span>OR</span>
