@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/config';
+import { doc, getDocs, updateDoc, increment, collection, query, where } from 'firebase/firestore';
 import { Share2, Copy, CheckCircle, Users } from 'lucide-react';
 import './Referral.css';
 
 const Referral = () => {
+  const { user, setUser } = useAuth();
   const [copied, setCopied] = useState(false);
-  const referralCode = 'VIEW50WIN';
+  const [inputCode, setInputCode] = useState('');
+  const [statusMsg, setStatusMsg] = useState('');
+  
+  // Real referral code based on user UID
+  const referralCode = user ? user.uid.substring(0, 6).toUpperCase() : 'LOGIN';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralCode);
@@ -25,6 +33,65 @@ const Referral = () => {
       }
     } else {
       handleCopy();
+    }
+  };
+
+  const applyReferralCode = async () => {
+    if (!user) return;
+    if (!inputCode) {
+      setStatusMsg('Please enter a referral code.');
+      return;
+    }
+    if (inputCode === referralCode) {
+      setStatusMsg('You cannot use your own code!');
+      return;
+    }
+    if (user.referredBy) {
+      setStatusMsg('You have already used a referral code.');
+      return;
+    }
+
+    try {
+      // Find the user with this referral code (UID starts with this code)
+      // For simplicity, we search users where UID starts with inputCode.
+      // In a real app, you might store referralCode as a field in the document.
+      // Here we will do a query to find the referrer
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('uid', '>=', inputCode.toLowerCase()), where('uid', '<=', inputCode.toLowerCase() + '\uf8ff'));
+      const querySnapshot = await getDocs(q);
+      
+      let referrerDoc = null;
+      querySnapshot.forEach((docSnap) => {
+        if (docSnap.id.toUpperCase().startsWith(inputCode.toUpperCase())) {
+          referrerDoc = docSnap;
+        }
+      });
+
+      if (!referrerDoc) {
+        setStatusMsg('Invalid referral code.');
+        return;
+      }
+
+      // Update current user
+      const currentUserRef = doc(db, 'users', user.uid);
+      await updateDoc(currentUserRef, {
+        coins: increment(50),
+        referredBy: referrerDoc.id
+      });
+
+      // Update referrer
+      const referrerRef = doc(db, 'users', referrerDoc.id);
+      await updateDoc(referrerRef, {
+        coins: increment(50),
+        referralsCount: increment(1)
+      });
+
+      setUser({ ...user, coins: user.coins + 50, referredBy: referrerDoc.id });
+      setStatusMsg('Referral code applied! You got 50 coins.');
+      setInputCode('');
+    } catch (error) {
+      console.error(error);
+      setStatusMsg('Error applying code.');
     }
   };
 
@@ -57,20 +124,38 @@ const Referral = () => {
         <Share2 size={20} /> Share Link
       </button>
 
+      <div className="apply-code-section" style={{marginTop: '20px', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px'}}>
+        <h3 style={{fontSize: '16px', marginBottom: '12px'}}>Have a referral code?</h3>
+        {statusMsg && <p style={{fontSize: '14px', marginBottom: '10px', color: statusMsg.includes('got 50 coins') ? 'green' : 'red'}}>{statusMsg}</p>}
+        <div style={{display: 'flex', gap: '10px'}}>
+          <input 
+            type="text" 
+            placeholder="Enter code" 
+            value={inputCode} 
+            onChange={(e) => setInputCode(e.target.value)}
+            style={{flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ccc'}}
+            disabled={user?.referredBy}
+          />
+          <button onClick={applyReferralCode} disabled={user?.referredBy} style={{padding: '10px 16px', background: 'var(--primary-orange)', color: 'white', borderRadius: '8px', border: 'none', fontWeight: 'bold'}}>
+            Apply
+          </button>
+        </div>
+      </div>
+
       <div className="referral-stats">
         <h3>Your Referrals</h3>
         <div className="stats-grid">
           <div className="stat-box">
             <Users size={24} className="stat-icon-ref" />
             <div className="stat-content">
-              <h4>12</h4>
+              <h4>{user?.referralsCount || 0}</h4>
               <p>Friends Invited</p>
             </div>
           </div>
           <div className="stat-box">
             <div className="stat-icon-ref coin-bg">₹</div>
             <div className="stat-content">
-              <h4>600</h4>
+              <h4>{(user?.referralsCount || 0) * 50}</h4>
               <p>Coins Earned</p>
             </div>
           </div>

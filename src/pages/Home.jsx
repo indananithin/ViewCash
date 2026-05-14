@@ -46,6 +46,30 @@ const Home = () => {
 
       {/* Quick Actions */}
       <section className="quick-actions">
+        <div className="action-box" onClick={async () => {
+          // Reward logic to add 10 coins
+          if (!user) return;
+          try {
+            const { doc, updateDoc, increment } = await import('firebase/firestore');
+            const { db } = await import('../firebase/config');
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, { coins: increment(10) });
+            // Local state update
+            import('../contexts/AuthContext').then(({ useAuth }) => {
+              // we already have setUser from useAuth if we export it.
+              // Actually we can't call hooks dynamically. Let's just update user directly or reload
+            });
+            window.location.reload(); // Simple refresh to show new balance
+          } catch(e) {
+            console.error("Reward error", e);
+          }
+        }}>
+          <div className="action-icon" style={{background: '#fef08a'}}>
+            <Coins size={28} color="#eab308" />
+          </div>
+          <h3>Watch Ad</h3>
+          <p>Earn +10 Coins</p>
+        </div>
         <div className="action-box" onClick={() => navigate('/products')}>
           <div className="action-icon gift-bg">
             <Gift size={28} color="#F39F5A" />

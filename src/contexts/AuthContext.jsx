@@ -1,4 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth, db } from '../firebase/config';
+import { 
+  onAuthStateChanged, 
+  signInWithPhoneNumber, 
+  RecaptchaVerifier, 
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -9,64 +19,128 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock check for existing session
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem('viewCashUser');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Fetch user data from Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            setUser({ ...firebaseUser, ...userDoc.data() });
+          } else {
+            // Create a new user profile in Firestore
+            const newUser = {
+              uid: firebaseUser.uid,
+              name: firebaseUser.displayName || 'User',
+              phone: firebaseUser.phoneNumber || '',
+              coins: 100, // Starting coins
+              tickets: 0,
+              isAdmin: false,
+              deviceId: generateDeviceId(),
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(userDocRef, newUser);
+            setUser({ ...firebaseUser, ...newUser });
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setUser(firebaseUser); // Fallback to basic auth user
         }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        setUser(null);
       }
-    };
-    checkAuth();
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (phoneOrEmail) => {
-    // Mock login logic
+  const setupRecaptcha = (containerId) => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: (response) => {
+          // reCAPTCHA solved
+        }
+      });
+    }
+  };
+
+  const loginWithPhone = async (phoneNumber, containerId) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const mockUser = {
-        uid: 'user_' + Date.now(),
-        name: phoneOrEmail === '9999999999' ? 'Admin User' : 'Guest User',
-        phone: phoneOrEmail,
-        coins: 120,
-        deviceId: localStorage.getItem('viewCashDeviceId') || generateDeviceId(),
-        isAdmin: phoneOrEmail === '9999999999'
-      };
-
-      setUser(mockUser);
-      localStorage.setItem('viewCashUser', JSON.stringify(mockUser));
+      setupRecaptcha(containerId);
+      const appVerifier = window.recaptchaVerifier;
+      // Add +91 if not present for India, assume it's included or passed correctly
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      window.confirmationResult = confirmationResult;
       return { success: true };
     } catch (error) {
+      console.error("Phone Auth Error:", error);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('viewCashUser');
+  const verifyOtp = async (otp) => {
+    setLoading(true);
+    try {
+      const result = await window.confirmationResult.confirm(otp);
+      return { success: true, user: result.user };
+    } catch (error) {
+      console.error("OTP Error:", error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      return { success: true, user: result.user };
+    } catch (error) {
+      console.error("Google Auth Error:", error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const logout = async () => {
+    setLoading(true);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout Error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const generateDeviceId = () => {
-    const id = 'dev_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('viewCashDeviceId', id);
+    let id = localStorage.getItem('viewCashDeviceId');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('viewCashDeviceId', id);
+    }
     return id;
   };
 
   const value = {
     user,
-    login,
+    setUser, // Expose setUser for local updates
+    loginWithPhone,
+    verifyOtp,
+    loginWithGoogle,
     logout,
-    loading
+    loading,
+    setLoading
   };
 
   return (
