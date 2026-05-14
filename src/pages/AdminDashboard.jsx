@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
 import './Admin.css';
 
 const AdminDashboard = () => {
@@ -84,6 +84,108 @@ const AdminDashboard = () => {
             </div>
           </div>
         );
+      case 'products':
+        return (
+          <div className="admin-form-container">
+            <h3>Add New Product</h3>
+            <form className="admin-form" onSubmit={(e) => e.preventDefault()}>
+              <div className="form-group">
+                <label>Product Title</label>
+                <input type="text" placeholder="e.g. iPhone 15 Pro Max" required />
+              </div>
+              <div className="form-group">
+                <label>Prize Amount/Value</label>
+                <input type="text" placeholder="e.g. ₹1,50,000" required />
+              </div>
+              <div className="form-group">
+                <label>Draw Date</label>
+                <input type="date" required />
+              </div>
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label>Tickets Required</label>
+                  <input type="number" placeholder="e.g. 6" required />
+                </div>
+                <div className="form-group">
+                  <label>Ads Per Ticket</label>
+                  <input type="number" placeholder="e.g. 6" required />
+                </div>
+              </div>
+              <button type="submit" className="btn-submit">Add Product</button>
+            </form>
+          </div>
+        );
+      case 'draws':
+        return (
+          <div className="admin-form-container">
+            <h3>Add Draw Result</h3>
+            <form className="admin-form" onSubmit={(e) => e.preventDefault()}>
+              <div className="form-group">
+                <label>Product Name</label>
+                <input type="text" placeholder="e.g. Samsung S24 Ultra" required />
+              </div>
+              <div className="form-group">
+                <label>Winner Name</label>
+                <input type="text" placeholder="e.g. Rahul M." required />
+              </div>
+              <div className="form-group">
+                <label>Winner Phone (Masked)</label>
+                <input type="text" placeholder="e.g. XXXXX-XX892" required />
+              </div>
+              <div className="form-group">
+                <label>Draw Date</label>
+                <input type="date" required />
+              </div>
+              <div className="form-group">
+                <label>Status</label>
+                <select required>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Claimed">Claimed</option>
+                </select>
+              </div>
+              <button type="submit" className="btn-submit">Publish Result</button>
+            </form>
+          </div>
+        );
+      case 'claims':
+        return (
+          <div className="admin-table-container">
+            <h3>Manage Product Claims</h3>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Product</th>
+                  <th>Address/Phone</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Rahul M.</td>
+                  <td>Samsung S24</td>
+                  <td>Delhi, IN</td>
+                  <td><span className="status-badge processing">Processing</span></td>
+                  <td className="action-cell">
+                    <button className="btn-approve" title="Mark Shipped"><CheckCircle size={16}/></button>
+                    <button className="btn-reject" title="Reject"><XCircle size={16}/></button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Priya K.</td>
+                  <td>Boat Watch</td>
+                  <td>Mumbai, IN</td>
+                  <td><span className="status-badge shipped">Shipped</span></td>
+                  <td className="action-cell">
+                    <button className="btn-approve" title="Mark Claimed"><CheckCircle size={16}/></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
       default:
         return <div>Select a tab</div>;
     }
@@ -102,6 +204,24 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('overview')}
         >
           <TrendingUp size={16} /> Overview
+        </button>
+        <button 
+          className={activeTab === 'products' ? 'active' : ''} 
+          onClick={() => setActiveTab('products')}
+        >
+          <PlusCircle size={16} /> Add Product
+        </button>
+        <button 
+          className={activeTab === 'draws' ? 'active' : ''} 
+          onClick={() => setActiveTab('draws')}
+        >
+          <Trophy size={16} /> Add Draw
+        </button>
+        <button 
+          className={activeTab === 'claims' ? 'active' : ''} 
+          onClick={() => setActiveTab('claims')}
+        >
+          <Package size={16} /> Claims
         </button>
         <button 
           className={activeTab === 'withdrawals' ? 'active' : ''} 

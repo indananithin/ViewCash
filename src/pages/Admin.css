@@ -166,3 +166,92 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Admin Forms */
+.admin-form-container {
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-form-container h3 {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background: #F9FAFB;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary-orange);
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.btn-submit {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* Status Badges */
+.status-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.status-badge.processing {
+  background: var(--bg-info-orange);
+  color: var(--primary-orange);
+}
+
+.status-badge.shipped {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.status-badge.claimed {
+  background: var(--bg-info-green);
+  color: #166534;
+}
