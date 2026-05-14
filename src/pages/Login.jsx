@@ -75,7 +75,9 @@ const Login = () => {
       navigate('/');
     } else {
       let msg = result.error || 'Authentication Failed';
-      if (msg.includes('auth/invalid-credential')) msg = 'Incorrect mobile number or password.';
+      if (msg.includes('auth/invalid-credential') || msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password')) {
+        msg = 'Invalid password or mobile number.';
+      }
       if (msg.includes('auth/email-already-in-use')) msg = 'An account already exists with this mobile number.';
       setError(msg);
       setIsSubmitting(false);

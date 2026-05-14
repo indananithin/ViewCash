@@ -6,7 +6,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  signOut
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -67,7 +68,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loginWithEmail = async (email, password, isSignUp = false, extraData = {}) => {
-    setLoading(true);
     try {
       if (isSignUp) {
         // Temporarily store the name and referral code so onAuthStateChanged can pick it up
@@ -84,13 +84,10 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Email Auth Error:", error);
       return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
-    setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -98,19 +95,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Google Auth Error:", error);
       return { success: false, error: error.message };
-    } finally {
-      setLoading(false);
     }
   }
 
   const logout = async () => {
-    setLoading(true);
     try {
       await signOut(auth);
     } catch (error) {
       console.error("Logout Error:", error);
-    } finally {
-      setLoading(false);
     }
   };
 

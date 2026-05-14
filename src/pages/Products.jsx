@@ -26,22 +26,73 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  const handleBuyTicket = async (product) => {
+  const handleWatchAd = async (product) => {
     if (!user) return;
     
-    // In a real app, buying a ticket might cost coins, or require watching an ad first.
-    // The prompt says "Watch 6 ads = 1 ticket". For now, clicking "Buy Ticket" simulates watching an ad or earning a ticket.
+    const today = new Date().toISOString().split('T')[0];
+    const userRef = doc(db, 'users', user.uid);
     
+    // Default structure for product progress
+    const productData = user.productProgress?.[product.id] || { 
+      adsWatchedToday: 0, 
+      lastAdDate: '', 
+      tickets: 0,
+      daysClaimed: 0
+    };
+    
+    let { adsWatchedToday, lastAdDate, tickets, daysClaimed } = productData;
+    
+    // Reset if it's a new day
+    if (lastAdDate !== today) {
+      adsWatchedToday = 0;
+      lastAdDate = today;
+    }
+    
+    const adsRequiredPerTicket = product.adsRequiredPerTicket || 6;
+
+    if (adsWatchedToday >= adsRequiredPerTicket) {
+      alert("You have already brought today's ticket! Come back tomorrow.");
+      return;
+    }
+    
+    // Simulate watching an ad
+    adsWatchedToday += 1;
+    let newTickets = tickets;
+    let newDaysClaimed = daysClaimed;
+    
+    if (adsWatchedToday >= adsRequiredPerTicket) {
+      newTickets += 1;
+      newDaysClaimed += 1; // Claims 1 ticket for the day
+      
+      // Bonus logic: 6 days claimed = bonus 3 tickets
+      if (newDaysClaimed % 6 === 0) {
+         newTickets += 3;
+         alert(`Congratulations! You've claimed tickets for 6 days and earned 3 BONUS tickets!`);
+      } else {
+         alert(`You have watched all ads for today and earned a ticket for ${product.title}!`);
+      }
+    }
+    
+    const updatedProductData = {
+      adsWatchedToday,
+      lastAdDate,
+      tickets: newTickets,
+      daysClaimed: newDaysClaimed
+    };
+
     try {
-      // Update user document to increment tickets
-      const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
-        tickets: increment(1)
+        [`productProgress.${product.id}`]: updatedProductData
       });
-      setUser({ ...user, tickets: (user.tickets || 0) + 1 });
-      alert(`Ticket acquired for ${product.title}!`);
+      setUser({
+        ...user,
+        productProgress: {
+          ...(user.productProgress || {}),
+          [product.id]: updatedProductData
+        }
+      });
     } catch (error) {
-      console.error("Error buying ticket:", error);
+      console.error("Error updating ad progress:", error);
     }
   };
 
@@ -65,11 +116,26 @@ const Products = () => {
           <p>No products available right now.</p>
         ) : (
           products.map(product => {
-            // Simplified progress logic for the user based on global tickets
-            const ticketsEarned = user?.tickets || 0;
-            const ticketsRequired = product.ticketsRequired || 6;
-            const progressPercent = Math.min((ticketsEarned / ticketsRequired) * 100, 100);
-            const isQualified = ticketsEarned >= ticketsRequired;
+            const productData = user?.productProgress?.[product.id] || { 
+              adsWatchedToday: 0, 
+              lastAdDate: '', 
+              tickets: 0,
+              daysClaimed: 0
+            };
+            
+            const today = new Date().toISOString().split('T')[0];
+            const adsWatchedToday = productData.lastAdDate === today ? productData.adsWatchedToday : 0;
+            const adsRequired = product.adsRequiredPerTicket || 6;
+            
+            const daysClaimed = productData.daysClaimed || 0;
+            const qualifyingTarget = 6;
+            const currentQualifyingDays = daysClaimed % qualifyingTarget;
+            // If they just hit a multiple of 6 (and it's not 0), show 6/6 and qualified
+            const isQualifiedForBonus = currentQualifyingDays === 0 && daysClaimed > 0;
+            const qualifyingDaysDisplay = isQualifiedForBonus ? qualifyingTarget : currentQualifyingDays;
+
+            const ticketsEarned = productData.tickets || 0;
+            const isTodayBrought = adsWatchedToday >= adsRequired;
             
             return (
               <div key={product.id} className="product-card">
@@ -84,39 +150,58 @@ const Products = () => {
                   </div>
                 </div>
 
+                {/* Progress 1: Qualifying Tickets (Days) */}
                 <div className="ticket-progress-container">
                   <div className="progress-labels">
-                    <span>Your Tickets: {ticketsEarned}</span>
-                    <span>{ticketsEarned}/{ticketsRequired} tickets</span>
+                    <span>Qualifying Tickets Bonus</span>
+                    <span>{qualifyingDaysDisplay}/{qualifyingTarget} Days</span>
                   </div>
                   <div className="progress-bar-bg">
                     <div 
                       className="progress-bar-fill" 
-                      style={{ width: `${progressPercent}%` }}
+                      style={{ width: `${(qualifyingDaysDisplay / qualifyingTarget) * 100}%` }}
                     ></div>
                   </div>
-                  {!isQualified && (
-                    <p className="bonus-hint">
-                      Earn {ticketsRequired - ticketsEarned} more tickets to qualify
-                    </p>
-                  )}
-                  {isQualified && (
-                    <p className="bonus-hint" style={{color: 'green'}}>
-                      You are qualified for this draw!
-                    </p>
-                  )}
+                  <p className="bonus-hint" style={{ color: isQualifiedForBonus ? 'green' : 'var(--text-muted)' }}>
+                    {isQualifiedForBonus 
+                      ? "You qualified and received 3 bonus tickets!" 
+                      : `Claim tickets for ${qualifyingTarget} days to get 3 bonus tickets!`}
+                  </p>
+                </div>
+
+                {/* Progress 2: Today's Ticket */}
+                <div className="ticket-progress-container">
+                  <div className="progress-labels">
+                    <span>Today's Ticket (Ads)</span>
+                    <span>{adsWatchedToday}/{adsRequired} Ads</span>
+                  </div>
+                  <div className="progress-bar-bg">
+                    <div 
+                      className="progress-bar-fill" 
+                      style={{ width: `${(adsWatchedToday / adsRequired) * 100}%` }}
+                    ></div>
+                  </div>
+                  <p className="bonus-hint" style={{ color: isTodayBrought ? 'green' : 'var(--text-muted)' }}>
+                    {isTodayBrought ? "Already brought today's ticket!" : "Watch ads to claim today's ticket"}
+                  </p>
                 </div>
 
                 <div className="action-box-product">
                   <div className="ads-info">
-                    <PlayCircle size={18} />
-                    <span>Watch {product.adsRequiredPerTicket || 6} Ads = 1 Ticket</span>
+                    <Gift size={18} />
+                    <span>Your Total Tickets: {ticketsEarned}</span>
                   </div>
                   <button 
                     className="btn-buy" 
-                    onClick={() => handleBuyTicket(product)}
+                    onClick={() => handleWatchAd(product)}
+                    disabled={isTodayBrought}
+                    style={{ 
+                      background: isTodayBrought ? '#ccc' : 'var(--primary-gradient)',
+                      color: isTodayBrought ? '#666' : 'white',
+                      cursor: isTodayBrought ? 'not-allowed' : 'pointer'
+                    }}
                   >
-                    Earn Ticket
+                    {isTodayBrought ? 'Already Brought' : 'Watch Ad'}
                   </button>
                 </div>
               </div>

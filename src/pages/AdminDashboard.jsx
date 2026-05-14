@@ -15,11 +15,8 @@ const AdminDashboard = () => {
   const [adsPerTicket, setAdsPerTicket] = useState('');
   
   // States for Add Draw
-  const [drawProduct, setDrawProduct] = useState('');
-  const [drawWinner, setDrawWinner] = useState('');
-  const [drawPhone, setDrawPhone] = useState('');
-  const [drawResultDate, setDrawResultDate] = useState('');
-  const [drawStatus, setDrawStatus] = useState('Processing');
+  const [drawProductId, setDrawProductId] = useState('');
+  const [numWinners, setNumWinners] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -27,6 +24,8 @@ const AdminDashboard = () => {
   // Real Data States
   const [usersList, setUsersList] = useState([]);
   const [withdrawalsList, setWithdrawalsList] = useState([]);
+  const [productsList, setProductsList] = useState([]);
+  const [claimsList, setClaimsList] = useState([]);
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -36,14 +35,28 @@ const AdminDashboard = () => {
         
         const wSnap = await getDocs(query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc')));
         setWithdrawalsList(wSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        
+        const pSnap = await getDocs(collection(db, 'products'));
+        setProductsList(pSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        
+        const cSnap = await getDocs(query(collection(db, 'claims'), orderBy('claimedAt', 'desc')));
+        setClaimsList(cSnap.docs.map(d => ({id: d.id, ...d.data()})));
       } catch(e) {
         console.error("Error fetching admin data:", e);
       }
     };
-    if (activeTab === 'users' || activeTab === 'withdrawals' || activeTab === 'overview') {
+    if (['users', 'withdrawals', 'overview', 'draws', 'claims'].includes(activeTab)) {
       fetchAdminData();
     }
   }, [activeTab]);
+
+  const selectedProduct = productsList.find(p => p.id === drawProductId);
+  const qualifiedUsers = usersList.filter(u => {
+     if (!selectedProduct) return false;
+     const target = selectedProduct.ticketsRequired || 6;
+     const userTickets = u.productProgress?.[drawProductId]?.tickets || 0;
+     return userTickets >= target;
+  });
 
   const MOCK_STATS = [
     { label: 'Total Users', value: usersList.length || '0', icon: <Users /> },
@@ -77,22 +90,47 @@ const AdminDashboard = () => {
 
   const handleAddDraw = async (e) => {
     e.preventDefault();
+    if (!selectedProduct) return;
+    
     setIsSubmitting(true);
     setStatusMsg('');
     try {
+      // Randomly pick numWinners
+      const shuffled = [...qualifiedUsers].sort(() => 0.5 - Math.random());
+      const winnersCount = Math.min(parseInt(numWinners), qualifiedUsers.length);
+      const winners = shuffled.slice(0, winnersCount);
+      
+      const winnersData = winners.map(w => ({
+        uid: w.id,
+        name: w.name || 'Anonymous',
+        phone: w.phone || 'Unknown'
+      }));
+
+      // Save to draws collection
       await addDoc(collection(db, 'draws'), {
-        title: drawProduct,
-        winner: drawWinner,
-        winnerPhone: drawPhone,
-        date: drawResultDate,
-        status: drawStatus,
+        productId: selectedProduct.id,
+        title: selectedProduct.title,
+        prizeAmount: selectedProduct.prizeAmount,
+        date: new Date().toISOString().split('T')[0],
+        winners: winnersData,
+        status: 'Completed',
         createdAt: new Date().toISOString()
       });
-      setStatusMsg('Draw result published successfully!');
-      setDrawProduct(''); setDrawWinner(''); setDrawPhone(''); setDrawResultDate(''); setDrawStatus('Processing');
+
+      // Mark product as inactive
+      await updateDoc(doc(db, 'products', selectedProduct.id), {
+        active: false
+      });
+
+      setStatusMsg(`Draw completed! Selected ${winners.length} winners.`);
+      setDrawProductId('');
+      setNumWinners('');
+      
+      // Update local products list
+      setProductsList(productsList.map(p => p.id === selectedProduct.id ? {...p, active: false} : p));
     } catch (err) {
       console.error(err);
-      setStatusMsg('Error publishing draw.');
+      setStatusMsg('Error completing draw.');
     } finally {
       setIsSubmitting(false);
     }
@@ -216,34 +254,41 @@ const AdminDashboard = () => {
       case 'draws':
         return (
           <div className="admin-form-container">
-            <h3>Add Draw Result</h3>
+            <h3>Perform Draw</h3>
             {statusMsg && <p style={{color: statusMsg.includes('Error') ? 'red' : 'green', marginBottom: '10px'}}>{statusMsg}</p>}
             <form className="admin-form" onSubmit={handleAddDraw}>
               <div className="form-group">
-                <label>Product Name</label>
-                <input type="text" placeholder="e.g. BookMyShow ₹200 Voucher" value={drawProduct} onChange={e=>setDrawProduct(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Winner Name</label>
-                <input type="text" placeholder="e.g. Rahul M." value={drawWinner} onChange={e=>setDrawWinner(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Winner Phone (Masked)</label>
-                <input type="text" placeholder="e.g. XXXXX-XX892" value={drawPhone} onChange={e=>setDrawPhone(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Draw Date</label>
-                <input type="date" value={drawResultDate} onChange={e=>setDrawResultDate(e.target.value)} required />
-              </div>
-              <div className="form-group">
-                <label>Status</label>
-                <select value={drawStatus} onChange={e=>setDrawStatus(e.target.value)} required>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Claimed">Claimed</option>
+                <label>Select Product</label>
+                <select value={drawProductId} onChange={e => setDrawProductId(e.target.value)} required>
+                  <option value="">-- Select Active Product --</option>
+                  {productsList.filter(p => p.active !== false).map(p => (
+                    <option key={p.id} value={p.id}>{p.title} (Target: {p.ticketsRequired || 6})</option>
+                  ))}
                 </select>
               </div>
-              <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Publishing...' : 'Publish Result'}</button>
+              
+              {selectedProduct && (
+                <div className="form-group" style={{background: 'rgba(247, 192, 74, 0.2)', padding: '15px', borderRadius: '8px', border: '1px solid var(--primary-orange)'}}>
+                  <p style={{ margin: 0, fontWeight: 'bold' }}>Qualified Members: <span style={{ color: 'green' }}>{qualifiedUsers.length}</span></p>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Number of Winners to Select</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={qualifiedUsers.length || 1} 
+                  placeholder="e.g. 10" 
+                  value={numWinners} 
+                  onChange={e => setNumWinners(e.target.value)} 
+                  required 
+                />
+              </div>
+              
+              <button type="submit" className="btn-submit" disabled={isSubmitting || !selectedProduct || qualifiedUsers.length === 0}>
+                {isSubmitting ? 'Drawing...' : 'Draw Now'}
+              </button>
             </form>
           </div>
         );
@@ -256,15 +301,51 @@ const AdminDashboard = () => {
                 <tr>
                   <th>User</th>
                   <th>Product</th>
-                  <th>Address/Phone</th>
+                  <th>Phone</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colSpan="5" style={{textAlign:'center'}}>No claims yet.</td>
-                </tr>
+                {claimsList.map(c => (
+                  <tr key={c.id}>
+                    <td>{c.userName}</td>
+                    <td>{c.productTitle}</td>
+                    <td>{c.userPhone}</td>
+                    <td>
+                      <span className={`status-badge ${c.status === 'Pending' ? 'pending' : 'approved'}`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="action-cell">
+                      {c.status === 'Pending' && (
+                        <button 
+                          className="btn-approve" 
+                          onClick={async () => {
+                            if (window.confirm('Mark this claim as settled?')) {
+                              try {
+                                await updateDoc(doc(db, 'claims', c.id), { 
+                                  status: 'Claimed', 
+                                  settledAt: new Date().toISOString() 
+                                });
+                                setClaimsList(claimsList.map(item => item.id === c.id ? {...item, status: 'Claimed', settledAt: new Date().toISOString()} : item));
+                              } catch(e) {
+                                console.error('Error settling claim', e);
+                              }
+                            }
+                          }}
+                        >
+                          <CheckCircle size={16}/> Settle
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {claimsList.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{textAlign:'center'}}>No claims yet.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
