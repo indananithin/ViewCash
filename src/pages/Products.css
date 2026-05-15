@@ -191,14 +191,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.95);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999;
   color: white;
   text-align: center;
   padding: 20px;
+  backdrop-filter: blur(10px);
 }
 
 .ad-modal-content {
@@ -227,11 +228,19 @@
 }
 
 .btn-cancel-ad {
-  margin-top: 20px;
-  background: transparent;
-  border: 1px solid white;
+  margin-top: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 12px 24px;
+  border-radius: 30px;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-ad:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
 }

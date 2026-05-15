@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
-import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass } from 'lucide-react';
+import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../components/ConfirmModal';
 import './Products.css';
 
 const Products = () => {
@@ -17,6 +19,7 @@ const Products = () => {
     timeLeft: 30,
     product: null
   });
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const handleWatchAd = async (product) => {
     if (!user) return;
@@ -97,9 +100,12 @@ const Products = () => {
   };
 
   const handleCancelAd = () => {
-    if (window.confirm("Are you sure you want to close the ad? You won't get your reward.")) {
-      setAdState({ isOpen: false, timeLeft: 0, product: null });
-    }
+    setShowExitConfirm(true);
+  };
+
+  const confirmExitAd = () => {
+    setAdState({ isOpen: false, timeLeft: 0, product: null });
+    setShowExitConfirm(false);
   };
 
   // Handle strict ad timer
@@ -120,18 +126,15 @@ const Products = () => {
   // Prevent back-button navigation during ad
   useEffect(() => {
     if (adState.isOpen) {
-      // Push a dummy state to the history
-      window.history.pushState(null, '', window.location.href);
+      // Push a dummy state to the history to capture back button
+      window.history.pushState({ adOpen: true }, '', window.location.href);
       
       const handlePopState = (e) => {
-        // If they press back, show confirmation and push state again to stay
         if (adState.isOpen) {
-          if (window.confirm("Do you want to quit watching the ad and lose your reward?")) {
-            setAdState({ isOpen: false, timeLeft: 0, product: null });
-          } else {
-            // Stay on page
-            window.history.pushState(null, '', window.location.href);
-          }
+          // If they press back, show confirmation
+          setShowExitConfirm(true);
+          // Stay on current page for now
+          window.history.pushState({ adOpen: true }, '', window.location.href);
         }
       };
 
@@ -310,8 +313,8 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Strict Ad Modal */}
-      {adState.isOpen && (
+      {/* Strict Ad Modal - Rendered via Portal to escape stacking contexts */}
+      {adState.isOpen && createPortal(
         <div className="ad-modal-overlay">
           <div className="ad-modal-content">
             <h3>Watching Ad...</h3>
@@ -325,7 +328,22 @@ const Products = () => {
               Cancel Ad
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {createPortal(
+        <ConfirmModal 
+          isOpen={showExitConfirm}
+          onClose={() => setShowExitConfirm(false)}
+          onConfirm={confirmExitAd}
+          title="Quit Ad?"
+          message="If you quit now, you will lose your progress for this ad. Are you sure you want to stop?"
+          confirmText="Yes, Stop Ad"
+          cancelText="Keep Watching"
+          iconType="warning"
+        />,
+        document.body
       )}
     </div>
   );
