@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
 
 const PullToRefresh = ({ children, onRefresh, disabled }) => {
@@ -7,6 +8,14 @@ const PullToRefresh = ({ children, onRefresh, disabled }) => {
   const startY = useRef(0);
   const isPulling = useRef(false);
   const containerRef = useRef(null);
+  const location = useLocation();
+  
+  // Reset state on page change
+  useEffect(() => {
+    setPullDistance(0);
+    setIsRefreshing(false);
+    isPulling.current = false;
+  }, [location.pathname]);
 
   const PULL_THRESHOLD = 80;
   const MAX_PULL = 150;

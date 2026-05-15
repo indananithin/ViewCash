@@ -11,8 +11,8 @@ const Layout = memo(() => {
   const isPullDisabled = disabledPages.includes(location.pathname);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
-      <div style={{ flex: 1, paddingBottom: 'calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 10px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
+      <div style={{ flex: 1 }}>
         <PullToRefresh disabled={isPullDisabled}>
           <Outlet />
         </PullToRefresh>

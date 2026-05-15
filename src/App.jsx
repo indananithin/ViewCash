@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import Splash from './pages/Splash';
 import Login from './pages/Login';
+import ScrollToTop from './components/ScrollToTop';
 import { useAuth } from './contexts/AuthContext';
 
 import Home from './pages/Home';
@@ -84,6 +85,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Suspense fallback={<div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-light)' }}><div className="loader" style={{width: '30px', height: '30px'}}></div></div>}>
         <Routes>
           <Route path="/login" element={<Login />} />

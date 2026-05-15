@@ -100,7 +100,7 @@ const Referral = () => {
   return (
     <div className="referral-container page-container">
       <header className="page-header">
-        <button className="back-btn" onClick={() => navigate('/')}>
+        <button className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={24} />
         </button>
         <h2>Refer & Earn</h2>
@@ -109,6 +109,22 @@ const Referral = () => {
       <div className="page-divider-strip"></div>
 
       <div className="page-content-inner">
+        <div style={{ 
+          background: 'rgba(234, 179, 8, 0.1)', 
+          color: '#854D0E', 
+          padding: '12px 16px', 
+          borderRadius: '12px', 
+          marginBottom: '20px', 
+          fontSize: '13px', 
+          border: '1px solid rgba(234, 179, 8, 0.2)',
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+          lineHeight: '1.4'
+        }}>
+          <span style={{ fontSize: '20px' }}>🚧</span>
+          <p><strong>Under Development:</strong> This feature is currently not fully active and will be improved further in the next update. Referrals may not be tracked for now.</p>
+        </div>
         <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Invite friends and earn bonus coins</p>
 
       <div className="referral-hero-card">
