@@ -1,15 +1,13 @@
 import React from 'react';
 import './Splash.css';
 
+import Logo from '../components/Logo';
+
 const Splash = () => {
   return (
     <div className="splash-container">
-      <div className="logo-container">
-        <img src="/logo.png" alt="ViewCash Logo" className="logo-image" />
-        <h1 className="logo-text">ViewCash</h1>
-        <p className="tagline">Watch. Win. Redeem.</p>
-      </div>
-      <div className="loader"></div>
+      <Logo size={100} />
+      <div className="loader" style={{ marginTop: '40px' }}></div>
     </div>
   );
 };

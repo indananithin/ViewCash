@@ -1,21 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
 import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { User, LogOut, Settings, HelpCircle, Shield, Share2, ShieldAlert, Edit2, Check } from 'lucide-react';
+import ConfirmModal from '../components/ConfirmModal';
 import './Profile.css';
 
 const Profile = () => {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Disable pull-to-refresh on this page
+    document.body.style.overscrollBehaviorY = 'contain';
+    return () => {
+      document.body.style.overscrollBehaviorY = 'auto';
+    };
+  }, []);
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = async () => {
     await logout();
     navigate('/login');
   };
@@ -109,7 +123,7 @@ const Profile = () => {
               <span>Admin Panel</span>
             </div>
           )}
-          <div className="menu-item">
+          <div className="menu-item" onClick={() => navigate('/support')}>
             <div className="menu-icon"><HelpCircle size={20} /></div>
             <span>Help & Support</span>
           </div>
@@ -120,6 +134,15 @@ const Profile = () => {
           Logout
         </button>
       </div>
+
+      <ConfirmModal 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to log out of ViewCash? You'll need to sign in again to access your rewards."
+        confirmText="Log Out"
+      />
     </div>
   );
 };

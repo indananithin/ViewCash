@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, getDocs, orderBy, query, where, addDoc, onSnapshot } from 'firebase/firestore';
-import { Trophy, Calendar } from 'lucide-react';
+import { Trophy, Calendar, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './Draws.css';
 
 const Draws = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [draws, setDraws] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userClaims, setUserClaims] = useState([]);
@@ -72,13 +74,20 @@ const Draws = () => {
   return (
     <div className="draws-container page-container">
       <header className="page-header">
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} />
+        </button>
         <h2>Draws & Results</h2>
-        <div style={{background: 'rgba(247, 192, 74, 0.2)', padding: '15px', borderRadius: '8px', border: '1px solid var(--primary-orange)', marginTop: '10px'}}>
+      </header>
+
+      <div className="page-divider-strip"></div>
+
+      <div className="page-content-inner">
+        <div style={{background: 'rgba(247, 192, 74, 0.2)', padding: '15px', borderRadius: '8px', border: '1px solid var(--primary-orange)', marginBottom: '20px'}}>
           <p style={{margin: 0, fontSize: '13px', lineHeight: '1.4'}}>
             <strong>Disclaimer:</strong> The draw is based on luck. You may win or lose. Hope you will win for the next draw!
           </p>
         </div>
-      </header>
 
       <div className="draws-list">
         {draws.length === 0 ? (
@@ -155,6 +164,7 @@ const Draws = () => {
             );
           })
         )}
+      </div>
       </div>
     </div>
   );

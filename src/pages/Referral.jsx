@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDocs, updateDoc, increment, collection, query, where } from 'firebase/firestore';
-import { Share2, Copy, CheckCircle, Users } from 'lucide-react';
+import { Share2, Copy, CheckCircle, Users, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './Referral.css';
 
 const Referral = () => {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
@@ -98,9 +100,16 @@ const Referral = () => {
   return (
     <div className="referral-container page-container">
       <header className="page-header">
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} />
+        </button>
         <h2>Refer & Earn</h2>
-        <p>Invite friends and earn bonus coins</p>
       </header>
+
+      <div className="page-divider-strip"></div>
+
+      <div className="page-content-inner">
+        <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Invite friends and earn bonus coins</p>
 
       <div className="referral-hero-card">
         <div className="hero-icon">
@@ -160,6 +169,7 @@ const Referral = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

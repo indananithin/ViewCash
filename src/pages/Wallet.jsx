@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
-import { Coins, IndianRupee, Clock, CheckCircle } from 'lucide-react';
+import { Coins, IndianRupee, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './Wallet.css';
 
 const Wallet = () => {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [upiId, setUpiId] = useState(user?.upi || '');
   const [amount, setAmount] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Disable pull-to-refresh on this page
+    document.body.style.overscrollBehaviorY = 'contain';
+    return () => {
+      document.body.style.overscrollBehaviorY = 'auto';
+    };
+  }, []);
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
@@ -61,8 +71,15 @@ const Wallet = () => {
   return (
     <div className="wallet-container page-container">
       <header className="page-header">
-        <h2>Wallet & Redemption</h2>
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} />
+        </button>
+        <h2>Withdraw</h2>
       </header>
+
+      <div className="page-divider-strip"></div>
+
+      <div className="page-content-inner">
 
       <div className="balance-card-wallet">
         <p>Available Balance</p>
@@ -144,6 +161,7 @@ const Wallet = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

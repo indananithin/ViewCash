@@ -1,37 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Coins, ChevronRight, Gift, Trophy, LogOut } from 'lucide-react';
+import { Bell, Coins, ChevronRight, Gift, Trophy, LogOut, User, Gamepad2, Ticket } from 'lucide-react';
 import { db } from '../firebase/config';
 import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import ConfirmModal from '../components/ConfirmModal';
 import './Home.css';
+
+import Logo from '../components/Logo';
 
 const Home = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => d.data());
-      // Count notifications from last 24 hours as "new"
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const count = docs.filter(n => n.createdAt > yesterday).length;
+      const lastChecked = user?.lastCheckedNotifications || new Date(0).toISOString();
+      const count = docs.filter(n => n.createdAt > lastChecked).length;
       setUnreadCount(count);
-      
-      // Also show a local browser notification for the very latest one if it's brand new (last 30 seconds)
-      const latest = docs[0];
-      if (latest && latest.createdAt > new Date(Date.now() - 30000).toISOString()) {
-         if (Notification.permission === "granted") {
-           new Notification(latest.title, { body: latest.message, icon: '/logo.png' });
-         }
-      }
     });
     return () => unsub();
-  }, []);
+  }, [user?.lastCheckedNotifications]);
 
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     await logout();
     navigate('/login');
   };
@@ -40,84 +35,101 @@ const Home = () => {
     <div className="home-container page-container">
       {/* Header Profile Section */}
       <header className="home-header">
-        <div className="profile-info">
-          <div className="avatar">
-            {user?.name?.charAt(0) || 'U'}
-          </div>
-          <div>
-            <p className="greeting">Hello, {user?.name || 'User'}</p>
-            <p className="status">Ready to win today?</p>
-          </div>
-        </div>
-        <div className="header-actions">
-          <button className="icon-btn" onClick={() => navigate('/notifications')} title="Notifications">
-            <Bell size={24} />
-            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+        <h2 className="greeting-text">Hello! <span className="user-name">{user?.name || 'Nithin'}</span></h2>
+        
+        <div className="header-right">
+          <button className="icon-btn-simple" onClick={() => navigate('/notifications')} style={{ position: 'relative', marginRight: '8px' }}>
+            <Bell size={24} color="#666" />
+            {unreadCount > 0 && (
+              <span className="badge-simple">{unreadCount}</span>
+            )}
           </button>
-          <button className="icon-btn" onClick={handleLogout} title="Logout">
-            <LogOut size={24} />
+
+          <div className="balance-pill" onClick={() => navigate('/wallet')}>
+            <div className="pill-icon">
+              <Coins size={16} fill="#FACC15" color="#FACC15" />
+            </div>
+            <span className="pill-amount">{user?.coins || 0}</span>
+          </div>
+          
+          <button className="profile-circle-btn" onClick={() => navigate('/profile')}>
+            <div className="inner-profile-icon">
+              <User size={20} fill="white" color="white" />
+            </div>
           </button>
         </div>
       </header>
 
-      {/* Coin Balance Card */}
-      <section className="balance-card">
-        <div className="balance-info">
-          <p>Total Balance</p>
-          <h2><Coins size={28} className="coin-icon" /> {user?.coins || 0} Coins</h2>
-          <small>1 Coin = ₹1.00</small>
-        </div>
-        <button className="redeem-btn" onClick={() => navigate('/wallet')}>
-          Redeem <ChevronRight size={16} />
-        </button>
-      </section>
+      <div className="section-title-simple">
+        <h3>Explore & Earn</h3>
+      </div>
 
-      {/* Quick Actions */}
-      <section className="quick-actions">
-        <div className="action-box" onClick={() => navigate('/referral')}>
-          <div className="action-icon referral-bg">
-            <Gift size={28} color="white" />
+      <div className="explore-cards-list">
+        {/* Fun Games Card */}
+        <div className="explore-card purple-theme" onClick={() => navigate('/games')}>
+          <div className="card-icon-wrapper">
+            <div className="icon-circle">
+              <Gamepad2 size={24} />
+            </div>
           </div>
-          <h3>Refer & Earn</h3>
-          <p>Get 5 Coins</p>
-        </div>
-        <div className="action-box" onClick={() => navigate('/products')}>
-          <div className="action-icon gift-bg">
-            <Gift size={28} color="white" />
+          <div className="card-info">
+            <h4>Fun Games</h4>
+            <p>Play exciting games and earn bonus coins</p>
           </div>
-          <h3 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            Active Products
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', marginLeft: '6px', animation: 'pulse 2s infinite' }}></span>
-          </h3>
-          <p>Earn tickets now</p>
+          <ChevronRight className="card-arrow" size={20} />
         </div>
-        <div className="action-box" style={{ gridColumn: 'span 2' }} onClick={() => navigate('/draws')}>
-          <div className="action-icon trophy-bg" style={{ margin: '0 auto 12px' }}>
-            <Trophy size={28} color="white" />
-          </div>
-          <h3>Lucky Draws</h3>
-          <p>Check results & winners</p>
-        </div>
-      </section>
 
-      {/* Recent Activity / Announcements */}
-      <section className="announcements">
-        <div className="section-title">
-          <h3><Bell size={20} color="var(--primary-orange)" style={{ verticalAlign: 'middle', marginRight: '6px' }}/> Latest Updates</h3>
-        </div>
-        <div className="announcement-card">
-          <div className="announcement-content">
-            <h4><Trophy size={16} color="var(--primary-yellow)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> New BookMyShow Voucher Draw!</h4>
-            <p>Participate now with just 6 tickets to win a brand new BookMyShow voucher.</p>
+        {/* Products Card */}
+        <div className="explore-card orange-theme" onClick={() => navigate('/products')}>
+          <div className="card-icon-wrapper">
+            <div className="icon-circle">
+              <Ticket size={24} />
+            </div>
           </div>
-        </div>
-        <div className="announcement-card success">
-          <div className="announcement-content">
-            <h4><Coins size={16} color="var(--accent-green)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Withdrawals Processed</h4>
-            <p>All pending UPI withdrawals from yesterday have been successfully processed.</p>
+          <div className="card-info">
+            <h4>Products</h4>
+            <p>Buy tickets & win amazing gift cards instantly</p>
           </div>
+          <ChevronRight className="card-arrow" size={20} />
         </div>
-      </section>
+
+        {/* Draws & Results Card */}
+        <div className="explore-card pink-theme" onClick={() => navigate('/draws')}>
+          <div className="card-icon-wrapper">
+            <div className="icon-circle">
+              <Trophy size={24} />
+            </div>
+          </div>
+          <div className="card-info">
+            <h4>Draws & Results</h4>
+            <p>Check Product results and your winning entries</p>
+          </div>
+          <ChevronRight className="card-arrow" size={20} />
+        </div>
+
+        {/* Coins Redemption Card */}
+        <div className="explore-card green-theme" onClick={() => navigate('/wallet')}>
+          <div className="card-icon-wrapper">
+            <div className="icon-circle">
+              <Gift size={24} />
+            </div>
+          </div>
+          <div className="card-info">
+            <h4>Coins Redemption</h4>
+            <p>Redeem coins for exclusive rewards and perks</p>
+          </div>
+          <ChevronRight className="card-arrow" size={20} />
+        </div>
+      </div>
+
+      <ConfirmModal 
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        confirmText="Log Out"
+      />
     </div>
   );
 };

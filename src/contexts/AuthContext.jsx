@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }) => {
               isAdmin: false,
               deviceId: generateDeviceId(),
               createdAt: new Date().toISOString(),
+              lastCheckedNotifications: new Date().toISOString(),
               appliedReferral: pendingData.referralCode || ''
             };
             

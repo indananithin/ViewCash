@@ -1,27 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Bell, Gift, IndianRupee, Trophy, CheckCircle, Info } from 'lucide-react';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { Bell, Gift, IndianRupee, Trophy, CheckCircle, Info, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Notifications.css';
 
 const Notifications = () => {
+  const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
-      setNotifications(snap.docs.map(d => ({id: d.id, ...d.data()})));
+      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     }, (err) => {
       console.error("Error fetching notifications:", err);
       setLoading(false);
     });
+
+    // Mark all as read by updating lastCheckedNotifications
+    if (user?.uid) {
+      const now = new Date().toISOString();
+      const userRef = doc(db, 'users', user.uid);
+      updateDoc(userRef, {
+        lastCheckedNotifications: now
+      }).then(() => {
+        // Update local user state so Home page reflects it immediately
+        setUser(prev => ({ ...prev, lastCheckedNotifications: now }));
+      }).catch(err => console.error("Error updating lastCheckedNotifications:", err));
+    }
+
     return () => unsub();
-  }, []);
+  }, [user?.uid]);
 
   const getIcon = (type) => {
-    switch(type) {
+    switch (type) {
       case 'success': return <CheckCircle />;
       case 'promo': return <Gift />;
       case 'alert': return <Trophy />;
@@ -44,36 +61,44 @@ const Notifications = () => {
   };
 
   if (loading) {
-    return <div className="page-container" style={{padding: '20px', textAlign: 'center'}}>Loading notifications...</div>;
+    return <div className="page-container" style={{ padding: '20px', textAlign: 'center' }}>Loading notifications...</div>;
   }
 
   return (
     <div className="notifications-container page-container">
       <header className="page-header">
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} />
+        </button>
         <h2>Notifications</h2>
-        <p>Your recent alerts and updates</p>
       </header>
 
-      <div className="notifications-list">
-        {notifications.length === 0 ? (
-          <div style={{textAlign: 'center', padding: '40px', color: 'var(--text-muted)'}}>
-            <Bell size={48} style={{opacity: 0.2, marginBottom: '10px'}} />
-            <p>No notifications yet.</p>
-          </div>
-        ) : (
-          notifications.map(notification => (
-            <div key={notification.id} className={`notification-card ${notification.type || 'info'}`}>
-              <div className="notification-icon">
-                {getIcon(notification.type)}
-              </div>
-              <div className="notification-content">
-                <h4>{notification.title}</h4>
-                <p>{notification.message}</p>
-                <span className="notification-time">{getTimeAgo(notification.createdAt)}</span>
-              </div>
+      <div className="page-divider-strip"></div>
+
+      <div className="page-content-inner">
+        <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '14px' }}>Your recent alerts and updates</p>
+
+        <div className="notifications-list">
+          {notifications.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+              <Bell size={48} style={{ opacity: 0.2, marginBottom: '10px' }} />
+              <p>No notifications yet.</p>
             </div>
-          ))
-        )}
+          ) : (
+            notifications.map(notification => (
+              <div key={notification.id} className={`notification-card ${notification.type || 'info'}`}>
+                <div className="notification-icon">
+                  {getIcon(notification.type)}
+                </div>
+                <div className="notification-content">
+                  <h4>{notification.title}</h4>
+                  <p>{notification.message}</p>
+                  <span className="notification-time">{getTimeAgo(notification.createdAt)}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

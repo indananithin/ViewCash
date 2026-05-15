@@ -5,6 +5,14 @@ import './Games.css';
 const Games = () => {
   const [activeGame, setActiveGame] = useState(null);
 
+  useEffect(() => {
+    // Disable pull-to-refresh on this page to prevent game state loss
+    document.body.style.overscrollBehaviorY = 'contain';
+    return () => {
+      document.body.style.overscrollBehaviorY = 'auto';
+    };
+  }, []);
+
   const gamesList = [
     {
       id: 'tictactoe',

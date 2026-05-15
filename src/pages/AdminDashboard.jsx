@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, increment, onSnapshot } from 'firebase/firestore';
-import { Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
+import { ArrowLeft, Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './Admin.css';
 
+import Logo from '../components/Logo';
+
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   
   // States for Add Product
@@ -464,8 +468,16 @@ const AdminDashboard = () => {
   return (
     <div className="admin-page page-container">
       <header className="admin-header">
-        <h2>Admin Panel</h2>
-        <p>Manage ViewCash platform</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button className="back-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={24} />
+          </button>
+          <Logo size={40} showText={false} />
+          <div>
+            <h2>Admin Panel</h2>
+            <p>Manage ViewCash platform</p>
+          </div>
+        </div>
       </header>
 
       <div className="admin-tabs">

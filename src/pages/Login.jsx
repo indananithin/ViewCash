@@ -6,6 +6,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Phone, KeyRound } from 'lucide-react';
 import './Login.css';
 
+import Logo from '../components/Logo';
+
 const Login = () => {
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
@@ -116,8 +118,8 @@ const Login = () => {
   return (
     <div className="login-container page-container">
       <div className="login-header">
-        <img src="/logo.png" alt="ViewCash Logo" className="logo-image" />
-        <h2>Welcome to ViewCash</h2>
+        <Logo size={80} showText={false} />
+        <h2 style={{ marginTop: '16px' }}>Welcome to ViewCash</h2>
         <p>{isSignUp ? 'Create an account to start earning' : 'Login to start earning rewards'}</p>
       </div>
 

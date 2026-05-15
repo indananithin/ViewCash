@@ -2,59 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
-import { PlayCircle, Clock, Calendar, Gift, X } from 'lucide-react';
+import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './Products.css';
 
 const Products = () => {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const [adState, setAdState] = useState({
     isOpen: false,
     timeLeft: 30,
     product: null
   });
-
-  // Handle strict ad timer
-  useEffect(() => {
-    let timer;
-    if (adState.isOpen && adState.timeLeft > 0) {
-      timer = setInterval(() => {
-        setAdState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
-      }, 1000);
-    } else if (adState.isOpen && adState.timeLeft === 0) {
-      // Ad finished!
-      handleWatchAd(adState.product);
-      setAdState({ isOpen: false, timeLeft: 0, product: null });
-    }
-    return () => clearInterval(timer);
-  }, [adState.isOpen, adState.timeLeft]);
-
-  const handleStartAd = (product) => {
-    setAdState({
-      isOpen: true,
-      timeLeft: 30, // Strict 30 seconds ad time
-      product: product
-    });
-  };
-
-  const handleCancelAd = () => {
-    if (window.confirm("Are you sure you want to close the ad? You won't get your reward.")) {
-      setAdState({ isOpen: false, timeLeft: 0, product: null });
-    }
-  };
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'products'), (snap) => {
-      const productsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setProducts(productsList.filter(p => p.active !== false));
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching products:", error);
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
 
   const handleWatchAd = async (product) => {
     if (!user) return;
@@ -126,6 +88,79 @@ const Products = () => {
     }
   };
 
+  const handleStartAd = (product) => {
+    setAdState({
+      isOpen: true,
+      timeLeft: 30, // Strict 30 seconds ad time
+      product: product
+    });
+  };
+
+  const handleCancelAd = () => {
+    if (window.confirm("Are you sure you want to close the ad? You won't get your reward.")) {
+      setAdState({ isOpen: false, timeLeft: 0, product: null });
+    }
+  };
+
+  // Handle strict ad timer
+  useEffect(() => {
+    let timer;
+    if (adState.isOpen && adState.timeLeft > 0) {
+      timer = setInterval(() => {
+        setAdState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
+      }, 1000);
+    } else if (adState.isOpen && adState.timeLeft === 0) {
+      // Ad finished!
+      handleWatchAd(adState.product);
+      setAdState({ isOpen: false, timeLeft: 0, product: null });
+    }
+    return () => clearInterval(timer);
+  }, [adState.isOpen, adState.timeLeft]);
+
+  // Prevent back-button navigation during ad
+  useEffect(() => {
+    if (adState.isOpen) {
+      // Push a dummy state to the history
+      window.history.pushState(null, '', window.location.href);
+      
+      const handlePopState = (e) => {
+        // If they press back, show confirmation and push state again to stay
+        if (adState.isOpen) {
+          if (window.confirm("Do you want to quit watching the ad and lose your reward?")) {
+            setAdState({ isOpen: false, timeLeft: 0, product: null });
+          } else {
+            // Stay on page
+            window.history.pushState(null, '', window.location.href);
+          }
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [adState.isOpen]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'products'), (snap) => {
+      const productsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const activeProducts = productsList.filter(p => p.active !== false);
+      setProducts(activeProducts);
+      setLoading(false);
+
+      // Auto-refresh logic if no ads are available
+      if (activeProducts.length === 0 && retryCount < 5) {
+        const timer = setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, 5000); // Retry every 5 seconds if empty
+        return () => clearTimeout(timer);
+      }
+    }, (error) => {
+      console.error("Error fetching products:", error);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [retryCount]);
+
   if (loading) {
     return <div className="page-container" style={{padding: '20px', textAlign: 'center'}}>Loading products...</div>;
   }
@@ -133,130 +168,145 @@ const Products = () => {
   return (
     <div className="products-container page-container">
       <header className="page-header">
-        <h2><Gift size={24} color="var(--primary-orange)" style={{ verticalAlign: 'middle', marginRight: '6px' }} />Products</h2>
-        <p>Watch ads to earn tickets for lucky draws</p>
+        <button className="back-btn" onClick={() => navigate('/')}>
+          <ArrowLeft size={24} />
+        </button>
+        <h2>Products</h2>
       </header>
 
-      <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ background: 'var(--action-gradient)', padding: '6px', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Gift size={20} color="white" />
+      <div className="page-divider-strip"></div>
+
+      <div className="page-content-inner">
+        <div className="section-header" style={{ marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            🎟️ Active Products
+          </h3>
         </div>
-        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
-          Active Products
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', marginLeft: '8px', animation: 'pulse 2s infinite' }}></span>
-        </h3>
-      </div>
 
-      <div className="products-list">
-        {products.length === 0 ? (
-          <p>No products available right now.</p>
-        ) : (
-          products.map(product => {
-            const productData = user?.productProgress?.[product.id] || { 
-              adsWatchedToday: 0, 
-              lastAdDate: '', 
-              tickets: 0,
-              daysClaimed: 0
-            };
-            
-            const today = new Date().toISOString().split('T')[0];
-            const adsWatchedToday = productData.lastAdDate === today ? productData.adsWatchedToday : 0;
-            const adsRequired = product.adsRequiredPerTicket || 6;
-            
-            const daysClaimed = productData.daysClaimed || 0;
-            const qualifyingTarget = 6;
-            const currentQualifyingDays = daysClaimed % qualifyingTarget;
-            // If they just hit a multiple of 6 (and it's not 0), show 6/6 and qualified
-            const isQualifiedForBonus = currentQualifyingDays === 0 && daysClaimed > 0;
-            const qualifyingDaysDisplay = isQualifiedForBonus ? qualifyingTarget : currentQualifyingDays;
+        <div className="products-list">
+          {products.length === 0 ? (
+            <div className="no-ads-container" style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--bg-card)', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--shadow-sm)' }}>
+              <p style={{ color: 'var(--text-main)', fontWeight: '600' }}>No ad available right now.</p>
+              <p style={{ fontSize: '13px', marginTop: '8px', color: 'var(--text-muted)' }}>Auto-retrying in a few seconds or refresh manually</p>
+              <button 
+                className="btn-buy" 
+                style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px' }} 
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw size={16} /> Reload Now
+              </button>
+            </div>
+          ) : (
+            products.map(product => {
+              const productData = user?.productProgress?.[product.id] || { 
+                adsWatchedToday: 0, 
+                lastAdDate: '', 
+                tickets: 0,
+                daysClaimed: 0
+              };
+              
+              const today = new Date().toISOString().split('T')[0];
+              const adsWatchedToday = productData.lastAdDate === today ? productData.adsWatchedToday : 0;
+              const adsRequired = product.adsRequiredPerTicket || 6;
+              
+              const daysClaimed = productData.daysClaimed || 0;
+              const qualifyingTarget = 6;
+              const currentQualifyingDays = daysClaimed % qualifyingTarget;
+              const isQualifiedForBonus = currentQualifyingDays === 0 && daysClaimed > 0;
+              const qualifyingDaysDisplay = isQualifiedForBonus ? qualifyingTarget : currentQualifyingDays;
 
-            const ticketsEarned = productData.tickets || 0;
-            const isTodayBrought = adsWatchedToday >= adsRequired;
-            
-            return (
-              <div key={product.id} className="product-card">
-                <div className="product-info-header">
-                  <div className="product-title-group">
-                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }}></span>
-                      {product.title}
-                    </h4>
-                    <span className="prize-amount">Prize: {product.prizeAmount}</span>
+              const ticketsEarned = productData.tickets || 0;
+              const isTodayBrought = adsWatchedToday >= adsRequired;
+              
+              return (
+                <div key={product.id} className="product-card" style={{ background: '#FFFBEB', borderColor: '#FEF3C7' }}>
+                  <div className="product-info-header">
+                    <div className="product-title-group">
+                      <h4 style={{ color: '#92400E', fontSize: '20px' }}>{product.title}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#B45309' }}>
+                          🎁 Prize: {product.prizeAmount}
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#B45309' }}>
+                          🗓️ Draw Date: {product.drawDate}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="draw-date">
-                    <Calendar size={14} />
-                    <span>Draw: {product.drawDate}</span>
+
+                  {/* Progress 1: Today's Ticket */}
+                  <div className="ticket-progress-container" style={{ background: '#ECFDF5', padding: '12px', borderRadius: '12px', border: '1px solid #D1FAE5', marginTop: '16px' }}>
+                    <div className="progress-labels" style={{ color: '#065F46', fontWeight: '600', marginBottom: '8px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>✅ {isTodayBrought ? "Already Bought Ticket Today" : "Today's Ticket Progress"}</span>
+                    </div>
+                    <div className="progress-bar-bg" style={{ background: '#A7F3D0', height: '10px' }}>
+                      <div 
+                        className="progress-bar-fill" 
+                        style={{ width: `${(adsWatchedToday / adsRequired) * 100}%`, background: '#10B981' }}
+                      ></div>
+                    </div>
+                    <p style={{ color: '#047857', fontSize: '12px', marginTop: '8px', fontWeight: '500' }}>
+                      {isTodayBrought ? "🎯 Today's ticket already earned! Come back tomorrow." : `🎯 Watch ${adsRequired - adsWatchedToday} more ads to get today's ticket.`}
+                    </p>
+                  </div>
+
+                  {/* Progress 2: Qualifying Tickets */}
+                  <div className="ticket-progress-container" style={{ background: '#FFF7ED', padding: '12px', borderRadius: '12px', border: '1px solid #FFEDD5', marginTop: '16px' }}>
+                    <div className="progress-labels" style={{ color: '#9A3412', fontWeight: '600', marginBottom: '8px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>🎫 Your Tickets: {ticketsEarned}</span>
+                    </div>
+                    <div className="progress-bar-bg" style={{ background: '#FED7AA', height: '10px' }}>
+                      <div 
+                        className="progress-bar-fill" 
+                        style={{ width: `${(qualifyingDaysDisplay / qualifyingTarget) * 100}%`, background: '#F97316' }}
+                      ></div>
+                    </div>
+                    <div style={{ marginTop: '8px' }}>
+                      <p style={{ color: '#C2410C', fontSize: '12px', fontWeight: '500' }}>
+                        🎯 Progress: {qualifyingDaysDisplay}/{qualifyingTarget} tickets ({(qualifyingDaysDisplay / qualifyingTarget * 100).toFixed(0)}%)
+                      </p>
+                      {isQualifiedForBonus && (
+                        <p style={{ color: '#059669', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>
+                          🥳 You qualified for 3 FREE tickets!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '600', color: '#1F2937' }}>{adsRequired} Ads / Ticket</span>
+                    <button 
+                      className="btn-buy" 
+                      onClick={() => handleStartAd(product)}
+                      disabled={isTodayBrought}
+                      style={{ 
+                        background: isTodayBrought ? '#E5E7EB' : 'var(--primary-gradient)',
+                        color: isTodayBrought ? '#9CA3AF' : 'white',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        boxShadow: isTodayBrought ? 'none' : '0 4px 14px rgba(255, 128, 8, 0.3)'
+                      }}
+                    >
+                      {isTodayBrought ? 'Already Bought' : 'Watch Ad'}
+                    </button>
                   </div>
                 </div>
-
-                {/* Progress 1: Qualifying Tickets (Days) */}
-                <div className="ticket-progress-container">
-                  <div className="progress-labels">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} color="var(--primary-orange)" /> Qualifying Tickets Bonus</span>
-                    <span>{qualifyingDaysDisplay}/{qualifyingTarget} Days</span>
-                  </div>
-                  <div className="progress-bar-bg">
-                    <div 
-                      className="progress-bar-fill" 
-                      style={{ width: `${(qualifyingDaysDisplay / qualifyingTarget) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="bonus-hint" style={{ color: isQualifiedForBonus ? 'green' : 'var(--text-muted)' }}>
-                    {isQualifiedForBonus 
-                      ? "You qualified and received 3 bonus tickets!" 
-                      : `Claim tickets for ${qualifyingTarget} days to get 3 bonus tickets!`}
-                  </p>
-                </div>
-
-                {/* Progress 2: Today's Ticket */}
-                <div className="ticket-progress-container">
-                  <div className="progress-labels">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><PlayCircle size={14} color="var(--accent-green)" /> Today's Ticket (Ads)</span>
-                    <span>{adsWatchedToday}/{adsRequired} Ads</span>
-                  </div>
-                  <div className="progress-bar-bg">
-                    <div 
-                      className="progress-bar-fill" 
-                      style={{ width: `${(adsWatchedToday / adsRequired) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="bonus-hint" style={{ color: isTodayBrought ? 'green' : 'var(--text-muted)' }}>
-                    {isTodayBrought ? "Already brought today's ticket!" : "Watch ads to claim today's ticket"}
-                  </p>
-                </div>
-
-                <div className="action-box-product">
-                  <div className="ads-info">
-                    <Gift size={18} color="var(--primary-yellow)" />
-                    <span>Total Tickets: {ticketsEarned}</span>
-                  </div>
-                  <button 
-                    className="btn-buy" 
-                    onClick={() => handleStartAd(product)}
-                    disabled={isTodayBrought}
-                    style={{ 
-                      background: isTodayBrought ? '#ccc' : 'var(--primary-gradient)',
-                      color: isTodayBrought ? '#666' : 'white',
-                      cursor: isTodayBrought ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {isTodayBrought ? 'Already Brought' : 'Watch Ad'}
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      <div className="coming-soon-section">
-        <div className="section-header">
-          <h3><Clock size={18} color="var(--primary-yellow)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Coming Soon</h3>
+              );
+            })
+          )}
         </div>
-        <div className="coming-soon-card">
-          <Gift size={28} color="var(--primary-orange)" className="coming-soon-icon" style={{ marginBottom: '12px' }} />
-          <p>More exciting rewards!</p>
-          <span>Stay tuned for premium prizes.</span>
+
+        <div className="coming-soon-section" style={{ marginTop: '40px' }}>
+          <div className="section-header">
+            <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              ⏳ Coming Soon
+            </h3>
+          </div>
+          <div className="coming-soon-card" style={{ background: 'transparent', border: 'none', boxShadow: 'none', textAlign: 'center', padding: '20px 0' }}>
+            <p style={{ color: '#9CA3AF', fontSize: '14px' }}>No upcoming Products</p>
+          </div>
         </div>
       </div>
 
