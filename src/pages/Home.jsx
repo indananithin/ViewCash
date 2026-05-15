@@ -52,43 +52,46 @@ const Home = () => {
       {/* Quick Actions */}
       <section className="quick-actions">
         <div className="action-box" onClick={() => navigate('/referral')}>
-          <div className="action-icon" style={{background: '#fef08a'}}>
-            <Gift size={28} color="#eab308" />
+          <div className="action-icon referral-bg">
+            <Gift size={28} color="white" />
           </div>
           <h3>Refer & Earn</h3>
           <p>Get 5 Coins</p>
         </div>
         <div className="action-box" onClick={() => navigate('/products')}>
           <div className="action-icon gift-bg">
-            <Gift size={28} color="#F39F5A" />
+            <Gift size={28} color="white" />
           </div>
-          <h3>Active Products</h3>
+          <h3 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            Active Products
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', marginLeft: '6px', animation: 'pulse 2s infinite' }}></span>
+          </h3>
           <p>Earn tickets now</p>
         </div>
-        <div className="action-box" onClick={() => navigate('/draws')}>
-          <div className="action-icon trophy-bg">
-            <Trophy size={28} color="#4ADE80" />
+        <div className="action-box" style={{ gridColumn: 'span 2' }} onClick={() => navigate('/draws')}>
+          <div className="action-icon trophy-bg" style={{ margin: '0 auto 12px' }}>
+            <Trophy size={28} color="white" />
           </div>
           <h3>Lucky Draws</h3>
-          <p>Check results</p>
+          <p>Check results & winners</p>
         </div>
       </section>
 
       {/* Recent Activity / Announcements */}
       <section className="announcements">
         <div className="section-title">
-          <h3>Latest Updates</h3>
+          <h3><Bell size={20} color="var(--primary-orange)" style={{ verticalAlign: 'middle', marginRight: '6px' }}/> Latest Updates</h3>
         </div>
         <div className="announcement-card">
           <div className="announcement-content">
-            <h4>New BookMyShow ₹200 Voucher Draw!</h4>
+            <h4><Trophy size={16} color="var(--primary-yellow)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> New BookMyShow Voucher Draw!</h4>
             <p>Participate now with just 6 tickets to win a brand new BookMyShow voucher.</p>
           </div>
         </div>
         <div className="announcement-card success">
           <div className="announcement-content">
-            <h4>Withdrawals Processed</h4>
-            <p>All pending UPI withdrawals from yesterday have been processed.</p>
+            <h4><Coins size={16} color="var(--accent-green)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Withdrawals Processed</h4>
+            <p>All pending UPI withdrawals from yesterday have been successfully processed.</p>
           </div>
         </div>
       </section>

@@ -82,25 +82,37 @@
 .balance-card {
   background: var(--primary-gradient);
   border-radius: var(--border-radius-xl);
-  padding: 24px;
+  padding: 28px 24px;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-colored);
   margin-bottom: 32px;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
 }
 
 .balance-card::after {
   content: '';
   position: absolute;
-  top: -20px;
+  bottom: -40px;
   right: -20px;
-  width: 100px;
-  height: 100px;
-  background: rgba(255,255,255,0.1);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
   border-radius: 50%;
 }
 
@@ -174,10 +186,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: var(--shadow-sm);
 }
 
-.gift-bg { background: var(--bg-info-orange); }
-.trophy-bg { background: var(--bg-info-green); }
+.referral-bg { background: var(--secondary-gradient); }
+.gift-bg { background: var(--action-gradient); }
+.trophy-bg { background: var(--success-gradient); }
 
 .action-box h3 {
   font-size: 15px;
@@ -204,6 +218,12 @@
   margin-bottom: 12px;
   border-left: 4px solid var(--primary-yellow);
   box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+
+.announcement-card:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
 }
 
 .announcement-card.success {

@@ -1,42 +1,49 @@
 /* CSS Reset and Global Variables */
 :root {
-  /* Brand Colors */
-  --primary-yellow: #F7C04A; /* Soft yellow */
-  --primary-orange: #F39F5A; /* Soft orange */
+  /* Brand Colors - More Vibrant & Premium */
+  --primary-yellow: #FFC837; 
+  --primary-orange: #FF8008; 
   --primary-gradient: linear-gradient(135deg, var(--primary-yellow) 0%, var(--primary-orange) 100%);
+  --secondary-gradient: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+  --success-gradient: linear-gradient(135deg, #11998E 0%, #38EF7D 100%);
+  --accent-gradient: linear-gradient(135deg, #8A2BE2 0%, #FF1493 100%);
+  --action-gradient: linear-gradient(135deg, #FF6A00 0%, #EE0979 100%);
   
   /* Background & Surface Colors */
-  --bg-light: #FAFAFA;
+  --bg-light: #F4F7FE; /* Soft blue-gray for premium feel */
   --bg-card: #FFFFFF;
-  --bg-card-yellow: #FFF9E6; /* Very light yellow for product cards */
+  --bg-card-glass: rgba(255, 255, 255, 0.85);
   --bg-info-green: #E8F5E9;
-  --bg-info-orange: #FFF3E0;
+  --bg-info-orange: #FFF8EB;
 
   /* Text Colors */
-  --text-main: #1A1A1A;
-  --text-muted: #6B7280;
-  --text-light: #9CA3AF;
+  --text-main: #2B3674; /* Dark blue for higher contrast & premium look */
+  --text-muted: #A3AED0;
+  --text-light: #CBD5E1;
   
   /* Accents */
-  --accent-green: #4ADE80;
-  --accent-orange: #FB923C;
-  --accent-red: #F87171;
+  --accent-green: #05CD99;
+  --accent-orange: #FF8008;
+  --accent-red: #EE5D50;
+  --accent-purple: #4318FF;
 
   /* Layout */
   --border-radius-sm: 8px;
   --border-radius-md: 16px;
   --border-radius-lg: 24px;
   --border-radius-xl: 32px;
-  --padding-page: 16px;
-  --bottom-nav-height: 64px;
+  --padding-page: 20px;
+  --bottom-nav-height: 70px;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-card: 0 10px 30px rgba(247, 192, 74, 0.15); /* Yellow tinted shadow */
+  /* Shadows - Deeper, softer, more modern */
+  --shadow-sm: 0px 4px 10px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0px 10px 20px rgba(112, 144, 176, 0.12);
+  --shadow-card: 0px 18px 40px rgba(112, 144, 176, 0.12);
+  --shadow-colored: 0px 10px 20px -5px rgba(255, 128, 8, 0.4);
   
   /* Transitions */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-backdrop: blur(10px);
 }
 
 * {

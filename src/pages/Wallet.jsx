@@ -111,6 +111,19 @@ const Wallet = () => {
         </form>
       </div>
 
+      <div className="withdrawal-rules-card" style={{ background: 'var(--bg-info-orange)', padding: '16px', borderRadius: 'var(--border-radius-md)', marginBottom: '24px', borderLeft: '4px solid var(--primary-orange)' }}>
+        <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', marginBottom: '8px', fontSize: '15px' }}>
+          <CheckCircle size={16} /> Redemption Rules
+        </h4>
+        <ul style={{ paddingLeft: '20px', fontSize: '13px', color: 'var(--text-main)', lineHeight: '1.6' }}>
+          <li>Minimum withdrawal amount is <strong>50 Coins</strong>.</li>
+          <li>1 Coin is equal to ₹1 INR.</li>
+          <li>Withdrawals are processed manually and take <strong>24 to 48 hours</strong>.</li>
+          <li>Ensure your UPI ID is correct. Incorrect details will lead to payment failure.</li>
+          <li>Any fraudulent activity (multiple accounts, fake referrals) will result in account suspension and loss of coins.</li>
+        </ul>
+      </div>
+
       <div className="history-section">
         <h3>Recent Transactions</h3>
         <div className="transaction-list">

@@ -8,14 +8,21 @@ import './Login.css';
 
 const Login = () => {
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [name, setName] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { loginWithEmail } = useAuth();
+  const { loginWithEmail, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
@@ -37,8 +44,13 @@ const Login = () => {
       return;
     }
 
+    let finalPhone = phone;
+    if (!phone.startsWith('+')) {
+      finalPhone = `${countryCode}${phone}`;
+    }
+
     const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
-    if (savedPhone && savedPhone !== phone) {
+    if (savedPhone && savedPhone !== finalPhone && savedPhone !== phone) {
       setError('Strict Login Enforced: You can only login with your original registered number (' + savedPhone + ') on this device.');
       return;
     }
@@ -66,12 +78,12 @@ const Login = () => {
       }
     }
     
-    const fakeEmail = `${phone}@viewcash.app`;
+    const fakeEmail = `${finalPhone}@viewcash.app`;
     // Pass extra data (name and referral) using the 4th parameter of loginWithEmail
     const result = await loginWithEmail(fakeEmail, password, isSignUp, { name, referralCode });
     
     if (result.success) {
-      localStorage.setItem('viewCashRegisteredPhone', phone);
+      localStorage.setItem('viewCashRegisteredPhone', finalPhone);
       navigate('/');
     } else {
       let msg = result.error || 'Authentication Failed';
@@ -112,13 +124,37 @@ const Login = () => {
 
           <div className="input-group">
             <Phone size={20} className="input-icon" />
+            <select 
+              value={countryCode} 
+              onChange={(e) => setCountryCode(e.target.value)}
+              disabled={isSubmitting}
+              style={{
+                position: 'absolute',
+                left: '45px',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                fontWeight: 'bold',
+                color: 'var(--text-main)',
+                appearance: 'none',
+                zIndex: 2,
+                cursor: 'pointer'
+              }}
+            >
+              <option value="+91">+91 (IN)</option>
+              <option value="+1">+1 (US)</option>
+              <option value="+44">+44 (UK)</option>
+              <option value="+61">+61 (AU)</option>
+              <option value="+971">+971 (AE)</option>
+            </select>
             <input 
               type="tel" 
-              placeholder="Enter Mobile Number" 
+              placeholder="Mobile Number" 
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               disabled={isSubmitting}
               required
+              style={{ paddingLeft: '110px' }}
             />
           </div>
           {isSignUp && (

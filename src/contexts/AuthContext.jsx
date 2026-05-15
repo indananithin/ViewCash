@@ -69,6 +69,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithEmail = async (email, password, isSignUp = false, extraData = {}) => {
     try {
+      setLoading(true);
       if (isSignUp) {
         // Temporarily store the name and referral code so onAuthStateChanged can pick it up
         sessionStorage.setItem('viewCashPendingSignUp', JSON.stringify({
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: true };
     } catch (error) {
+      setLoading(false);
       console.error("Email Auth Error:", error);
       return { success: false, error: error.message };
     }
@@ -89,10 +91,12 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = async () => {
     try {
+      setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       return { success: true, user: result.user };
     } catch (error) {
+      setLoading(false);
       console.error("Google Auth Error:", error);
       return { success: false, error: error.message };
     }
@@ -127,7 +131,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

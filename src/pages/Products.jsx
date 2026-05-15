@@ -2,13 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
 import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
-import { PlayCircle, Clock, Calendar, Gift } from 'lucide-react';
+import { PlayCircle, Clock, Calendar, Gift, X } from 'lucide-react';
 import './Products.css';
 
 const Products = () => {
   const { user, setUser } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [adState, setAdState] = useState({
+    isOpen: false,
+    timeLeft: 30,
+    product: null
+  });
+
+  // Handle strict ad timer
+  useEffect(() => {
+    let timer;
+    if (adState.isOpen && adState.timeLeft > 0) {
+      timer = setInterval(() => {
+        setAdState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
+      }, 1000);
+    } else if (adState.isOpen && adState.timeLeft === 0) {
+      // Ad finished!
+      handleWatchAd(adState.product);
+      setAdState({ isOpen: false, timeLeft: 0, product: null });
+    }
+    return () => clearInterval(timer);
+  }, [adState.isOpen, adState.timeLeft]);
+
+  const handleStartAd = (product) => {
+    setAdState({
+      isOpen: true,
+      timeLeft: 30, // Strict 30 seconds ad time
+      product: product
+    });
+  };
+
+  const handleCancelAd = () => {
+    if (window.confirm("Are you sure you want to close the ad? You won't get your reward.")) {
+      setAdState({ isOpen: false, timeLeft: 0, product: null });
+    }
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -103,12 +137,18 @@ const Products = () => {
   return (
     <div className="products-container page-container">
       <header className="page-header">
-        <h2>Products</h2>
+        <h2><Gift size={24} color="var(--primary-orange)" style={{ verticalAlign: 'middle', marginRight: '6px' }} />Products</h2>
         <p>Watch ads to earn tickets for lucky draws</p>
       </header>
 
-      <div className="section-header">
-        <h3>Active Products</h3>
+      <div className="section-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ background: 'var(--action-gradient)', padding: '6px', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Gift size={20} color="white" />
+        </div>
+        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+          Active Products
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e', marginLeft: '8px', animation: 'pulse 2s infinite' }}></span>
+        </h3>
       </div>
 
       <div className="products-list">
@@ -141,7 +181,10 @@ const Products = () => {
               <div key={product.id} className="product-card">
                 <div className="product-info-header">
                   <div className="product-title-group">
-                    <h4>{product.title}</h4>
+                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%', boxShadow: '0 0 8px #22c55e' }}></span>
+                      {product.title}
+                    </h4>
                     <span className="prize-amount">Prize: {product.prizeAmount}</span>
                   </div>
                   <div className="draw-date">
@@ -153,7 +196,7 @@ const Products = () => {
                 {/* Progress 1: Qualifying Tickets (Days) */}
                 <div className="ticket-progress-container">
                   <div className="progress-labels">
-                    <span>Qualifying Tickets Bonus</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} color="var(--primary-orange)" /> Qualifying Tickets Bonus</span>
                     <span>{qualifyingDaysDisplay}/{qualifyingTarget} Days</span>
                   </div>
                   <div className="progress-bar-bg">
@@ -172,7 +215,7 @@ const Products = () => {
                 {/* Progress 2: Today's Ticket */}
                 <div className="ticket-progress-container">
                   <div className="progress-labels">
-                    <span>Today's Ticket (Ads)</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><PlayCircle size={14} color="var(--accent-green)" /> Today's Ticket (Ads)</span>
                     <span>{adsWatchedToday}/{adsRequired} Ads</span>
                   </div>
                   <div className="progress-bar-bg">
@@ -188,12 +231,12 @@ const Products = () => {
 
                 <div className="action-box-product">
                   <div className="ads-info">
-                    <Gift size={18} />
-                    <span>Your Total Tickets: {ticketsEarned}</span>
+                    <Gift size={18} color="var(--primary-yellow)" />
+                    <span>Total Tickets: {ticketsEarned}</span>
                   </div>
                   <button 
                     className="btn-buy" 
-                    onClick={() => handleWatchAd(product)}
+                    onClick={() => handleStartAd(product)}
                     disabled={isTodayBrought}
                     style={{ 
                       background: isTodayBrought ? '#ccc' : 'var(--primary-gradient)',
@@ -212,14 +255,32 @@ const Products = () => {
 
       <div className="coming-soon-section">
         <div className="section-header">
-          <h3>Coming Soon</h3>
+          <h3><Clock size={18} color="var(--primary-yellow)" style={{ verticalAlign: 'middle', marginRight: '4px' }}/> Coming Soon</h3>
         </div>
         <div className="coming-soon-card">
-          <Clock size={24} className="coming-soon-icon" />
+          <Gift size={28} color="var(--primary-orange)" className="coming-soon-icon" style={{ marginBottom: '12px' }} />
           <p>More exciting rewards!</p>
-          <span>Stay tuned.</span>
+          <span>Stay tuned for premium prizes.</span>
         </div>
       </div>
+
+      {/* Strict Ad Modal */}
+      {adState.isOpen && (
+        <div className="ad-modal-overlay">
+          <div className="ad-modal-content">
+            <h3>Watching Ad...</h3>
+            <p>Please wait to claim your ticket.</p>
+            <div className="ad-timer-circle">
+              {adState.timeLeft}s
+            </div>
+            <p className="ad-strict-warning">Do not close this window until the timer ends!</p>
+            <button className="btn-cancel-ad" onClick={handleCancelAd}>
+              <X size={16} style={{ verticalAlign: 'middle', marginRight: '5px' }}/>
+              Cancel Ad
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

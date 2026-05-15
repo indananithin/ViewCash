@@ -17,6 +17,7 @@ const AdminDashboard = () => {
   // States for Add Draw
   const [drawProductId, setDrawProductId] = useState('');
   const [numWinners, setNumWinners] = useState('');
+  const [drawPrizeAmount, setDrawPrizeAmount] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
       await addDoc(collection(db, 'draws'), {
         productId: selectedProduct.id,
         title: selectedProduct.title,
-        prizeAmount: selectedProduct.prizeAmount,
+        prizeAmount: drawPrizeAmount || selectedProduct.prizeAmount,
         date: new Date().toISOString().split('T')[0],
         winners: winnersData,
         status: 'Completed',
@@ -125,6 +126,7 @@ const AdminDashboard = () => {
       setStatusMsg(`Draw completed! Selected ${winners.length} winners.`);
       setDrawProductId('');
       setNumWinners('');
+      setDrawPrizeAmount('');
       
       // Update local products list
       setProductsList(productsList.map(p => p.id === selectedProduct.id ? {...p, active: false} : p));
@@ -284,6 +286,17 @@ const AdminDashboard = () => {
                   onChange={e => setNumWinners(e.target.value)} 
                   required 
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Custom Prize Amount (Optional)</label>
+                <input 
+                  type="text" 
+                  placeholder={selectedProduct ? `Current: ${selectedProduct.prizeAmount}` : "e.g. ₹500"} 
+                  value={drawPrizeAmount} 
+                  onChange={e => setDrawPrizeAmount(e.target.value)} 
+                />
+                <p style={{fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px'}}>Leave blank to use the product's default prize amount.</p>
               </div>
               
               <button type="submit" className="btn-submit" disabled={isSubmitting || !selectedProduct || qualifiedUsers.length === 0}>
