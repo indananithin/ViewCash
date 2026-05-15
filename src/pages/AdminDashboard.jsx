@@ -22,6 +22,11 @@ const AdminDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
 
+  // States for Send Notification
+  const [notifTitle, setNotifTitle] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifType, setNotifType] = useState('info');
+
   // Real Data States
   const [usersList, setUsersList] = useState([]);
   const [withdrawalsList, setWithdrawalsList] = useState([]);
@@ -85,6 +90,15 @@ const AdminDashboard = () => {
         createdAt: new Date().toISOString(),
         active: true
       });
+
+      // Send Notification
+      await addDoc(collection(db, 'notifications'), {
+        title: 'New Product Added!',
+        message: `A new draw for ${productTitle} is now active. Earn tickets now!`,
+        type: 'promo',
+        createdAt: new Date().toISOString()
+      });
+
       setStatusMsg('Product added successfully!');
       setProductTitle(''); setPrizeAmount(''); setDrawDate(''); setTicketsReq(''); setAdsPerTicket('');
     } catch (err) {
@@ -123,10 +137,17 @@ const AdminDashboard = () => {
         status: 'Completed',
         createdAt: new Date().toISOString()
       });
-
       // Mark product as inactive
       await updateDoc(doc(db, 'products', selectedProduct.id), {
         active: false
+      });
+
+      // Send Notification
+      await addDoc(collection(db, 'notifications'), {
+        title: 'Draw Results Announced!',
+        message: `The lucky draw for ${selectedProduct.title} is completed. Check if you won!`,
+        type: 'alert',
+        createdAt: new Date().toISOString()
       });
 
       // Local state will update via onSnapshot
@@ -150,10 +171,42 @@ const AdminDashboard = () => {
         const userRef = doc(db, 'users', uid);
         await updateDoc(userRef, { coins: increment(amount) });
       }
+
+      // Send Notification to user (optional: you could filter notifications by UID in the future)
+      await addDoc(collection(db, 'notifications'), {
+        title: `Withdrawal ${newStatus}`,
+        message: newStatus === 'Approved' 
+          ? `Your withdrawal of ${amount} coins has been processed.` 
+          : `Your withdrawal of ${amount} coins was rejected and refunded.`,
+        type: newStatus === 'Approved' ? 'success' : 'alert',
+        uid: uid, // Store UID to potentially filter in the future
+        createdAt: new Date().toISOString()
+      });
       
       setWithdrawalsList(withdrawalsList.map(w => w.id === id ? {...w, status: newStatus} : w));
     } catch(e) {
       console.error(e);
+    }
+  };
+
+  const handleSendNotification = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setStatusMsg('');
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        title: notifTitle,
+        message: notifMessage,
+        type: notifType,
+        createdAt: new Date().toISOString()
+      });
+      setStatusMsg('Notification sent to all users!');
+      setNotifTitle(''); setNotifMessage('');
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Error sending notification.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -369,6 +422,40 @@ const AdminDashboard = () => {
             </table>
           </div>
         );
+        case 'notifications':
+        return (
+          <div className="admin-form-container">
+            <h3>Send Global Notification</h3>
+            {statusMsg && <p style={{color: statusMsg.includes('Error') ? 'red' : 'green', marginBottom: '10px'}}>{statusMsg}</p>}
+            <form className="admin-form" onSubmit={handleSendNotification}>
+              <div className="form-group">
+                <label>Title</label>
+                <input type="text" placeholder="e.g. Draw Tonight!" value={notifTitle} onChange={e=>setNotifTitle(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>Message</label>
+                <textarea 
+                  placeholder="Enter your message here..." 
+                  value={notifMessage} 
+                  onChange={e=>setNotifMessage(e.target.value)} 
+                  required 
+                  rows="3"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+              <div className="form-group">
+                <label>Type</label>
+                <select value={notifType} onChange={e=>setNotifType(e.target.value)}>
+                  <option value="info">General Info</option>
+                  <option value="promo">Promotion / New Product</option>
+                  <option value="alert">Draw Alert</option>
+                  <option value="success">Success / Payment</option>
+                </select>
+              </div>
+              <button type="submit" className="btn-submit" disabled={isSubmitting}>{isSubmitting ? 'Sending...' : 'Send Now'}</button>
+            </form>
+          </div>
+        );
       default:
         return <div>Select a tab</div>;
     }
@@ -385,6 +472,7 @@ const AdminDashboard = () => {
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}><TrendingUp size={16} /> Overview</button>
         <button className={activeTab === 'products' ? 'active' : ''} onClick={() => setActiveTab('products')}><PlusCircle size={16} /> Add Product</button>
         <button className={activeTab === 'draws' ? 'active' : ''} onClick={() => setActiveTab('draws')}><Trophy size={16} /> Add Draw</button>
+        <button className={activeTab === 'notifications' ? 'active' : ''} onClick={() => setActiveTab('notifications')}><Bell size={16} /> Send Notif</button>
         <button className={activeTab === 'claims' ? 'active' : ''} onClick={() => setActiveTab('claims')}><Package size={16} /> Claims</button>
         <button className={activeTab === 'withdrawals' ? 'active' : ''} onClick={() => setActiveTab('withdrawals')}><IndianRupee size={16} /> Withdrawals</button>
         <button className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}><Shield size={16} /> Users</button>

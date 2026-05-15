@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Coins, ChevronRight, Gift, Trophy, LogOut } from 'lucide-react';
+import { db } from '../firebase/config';
+import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
 import './Home.css';
 
 const Home = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(d => d.data());
+      // Count notifications from last 24 hours as "new"
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const count = docs.filter(n => n.createdAt > yesterday).length;
+      setUnreadCount(count);
+      
+      // Also show a local browser notification for the very latest one if it's brand new (last 30 seconds)
+      const latest = docs[0];
+      if (latest && latest.createdAt > new Date(Date.now() - 30000).toISOString()) {
+         if (Notification.permission === "granted") {
+           new Notification(latest.title, { body: latest.message, icon: '/logo.png' });
+         }
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -29,7 +52,7 @@ const Home = () => {
         <div className="header-actions">
           <button className="icon-btn" onClick={() => navigate('/notifications')} title="Notifications">
             <Bell size={24} />
-            <span className="badge">2</span>
+            {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
           </button>
           <button className="icon-btn" onClick={handleLogout} title="Logout">
             <LogOut size={24} />

@@ -58,8 +58,8 @@ const Login = () => {
     }
 
     const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
-    // Basic check: if device is locked, must match saved number
-    if (savedPhone && savedPhone !== finalPhone) {
+    // Basic check: if device is locked, must match saved number for login
+    if (!isSignUp && savedPhone && savedPhone !== finalPhone) {
       // Allow if the input without country code matches saved (for legacy users)
       if (savedPhone !== sanitizedPhone) {
         setError('Strict Login Enforced: You can only login with your original registered number (' + savedPhone + ') on this device.');
@@ -67,26 +67,31 @@ const Login = () => {
       }
     }
     
-    if (isSignUp && savedPhone) {
-      setError('You already have an account on this device. Please login instead.');
-      return;
-    }
-    
     setIsSubmitting(true);
     setError('');
 
     if (isSignUp) {
+      // If they are trying to sign up, check if this phone already exists in Firestore
       try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('name', '==', name));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
+        const qPhone = query(usersRef, where('phone', '==', finalPhone));
+        const phoneSnap = await getDocs(qPhone);
+        
+        if (!phoneSnap.empty) {
+          setError('An account with this mobile number already exists. Please login instead.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const qName = query(usersRef, where('name', '==', name));
+        const nameSnap = await getDocs(qName);
+        if (!nameSnap.empty) {
           setError('This username is already taken. Please choose another one.');
           setIsSubmitting(false);
           return;
         }
       } catch (err) {
-        console.error("Error checking username uniqueness:", err);
+        console.error("Error checking account existence:", err);
       }
     }
     

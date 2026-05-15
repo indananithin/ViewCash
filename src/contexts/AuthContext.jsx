@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
               uid: firebaseUser.uid,
               name: pendingData.name || 'User',
               phone: pendingData.phone || '',
-              coins: 100, // Starting coins
+              coins: 0, // Starting coins
               tickets: 0,
               isAdmin: false,
               deviceId: generateDeviceId(),
@@ -77,7 +77,18 @@ export const AuthProvider = ({ children }) => {
           name: extraData.name,
           referralCode: extraData.referralCode
         }));
-        await createUserWithEmailAndPassword(auth, email, password);
+        
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+        } catch (err) {
+          // If account already exists in Auth but data is missing in Firestore (e.g. deleted by admin)
+          // We can try to just sign in. If it succeeds, onAuthStateChanged will recreate the Firestore doc.
+          if (err.code === 'auth/email-already-in-use') {
+            await signInWithEmailAndPassword(auth, email, password);
+          } else {
+            throw err;
+          }
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }

@@ -61,6 +61,13 @@ function App() {
     }
   }, [showSplash]);
 
+  // Request Notification Permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   if (showSplash) {
     return <Splash />;
   }
