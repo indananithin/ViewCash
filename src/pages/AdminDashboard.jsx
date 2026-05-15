@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, increment } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, increment, onSnapshot } from 'firebase/firestore';
 import { Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
 import './Admin.css';
 
@@ -29,27 +29,33 @@ const AdminDashboard = () => {
   const [claimsList, setClaimsList] = useState([]);
 
   useEffect(() => {
-    const fetchAdminData = async () => {
-      try {
-        const uSnap = await getDocs(collection(db, 'users'));
-        setUsersList(uSnap.docs.map(d => ({id: d.id, ...d.data()})));
-        
-        const wSnap = await getDocs(query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc')));
-        setWithdrawalsList(wSnap.docs.map(d => ({id: d.id, ...d.data()})));
-        
-        const pSnap = await getDocs(collection(db, 'products'));
-        setProductsList(pSnap.docs.map(d => ({id: d.id, ...d.data()})));
-        
-        const cSnap = await getDocs(query(collection(db, 'claims'), orderBy('claimedAt', 'desc')));
-        setClaimsList(cSnap.docs.map(d => ({id: d.id, ...d.data()})));
-      } catch(e) {
-        console.error("Error fetching admin data:", e);
-      }
+    // Listen to users
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
+      setUsersList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    // Listen to withdrawals
+    const unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc')), (snap) => {
+      setWithdrawalsList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    // Listen to products (show all to admin, but we'll filter in the UI where needed)
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
+      setProductsList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    // Listen to claims
+    const unsubClaims = onSnapshot(query(collection(db, 'claims'), orderBy('claimedAt', 'desc')), (snap) => {
+      setClaimsList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    return () => {
+      unsubUsers();
+      unsubWithdrawals();
+      unsubProducts();
+      unsubClaims();
     };
-    if (['users', 'withdrawals', 'overview', 'draws', 'claims'].includes(activeTab)) {
-      fetchAdminData();
-    }
-  }, [activeTab]);
+  }, []);
 
   const selectedProduct = productsList.find(p => p.id === drawProductId);
   const qualifiedUsers = usersList.filter(u => {
@@ -123,13 +129,11 @@ const AdminDashboard = () => {
         active: false
       });
 
+      // Local state will update via onSnapshot
       setStatusMsg(`Draw completed! Selected ${winners.length} winners.`);
       setDrawProductId('');
       setNumWinners('');
       setDrawPrizeAmount('');
-      
-      // Update local products list
-      setProductsList(productsList.map(p => p.id === selectedProduct.id ? {...p, active: false} : p));
     } catch (err) {
       console.error(err);
       setStatusMsg('Error completing draw.');
@@ -314,6 +318,7 @@ const AdminDashboard = () => {
                 <tr>
                   <th>User</th>
                   <th>Product</th>
+                  <th>Prize</th>
                   <th>Phone</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -324,6 +329,7 @@ const AdminDashboard = () => {
                   <tr key={c.id}>
                     <td>{c.userName}</td>
                     <td>{c.productTitle}</td>
+                    <td>{c.prizeAmount || 'N/A'}</td>
                     <td>{c.userPhone}</td>
                     <td>
                       <span className={`status-badge ${c.status === 'Pending' ? 'pending' : 'approved'}`}>

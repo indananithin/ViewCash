@@ -44,15 +44,27 @@ const Login = () => {
       return;
     }
 
-    let finalPhone = phone;
-    if (!phone.startsWith('+')) {
-      finalPhone = `${countryCode}${phone}`;
+    // Sanitize phone: remove all non-numeric characters except leading +
+    let sanitizedPhone = phone.trim().replace(/[^\d+]/g, '');
+    
+    // If it's a mobile number without country code, add it
+    let finalPhone = sanitizedPhone;
+    if (!sanitizedPhone.startsWith('+')) {
+      // Remove leading zero if present (common in some regions)
+      if (sanitizedPhone.startsWith('0')) {
+        sanitizedPhone = sanitizedPhone.substring(1);
+      }
+      finalPhone = `${countryCode}${sanitizedPhone}`;
     }
 
     const savedPhone = localStorage.getItem('viewCashRegisteredPhone');
-    if (savedPhone && savedPhone !== finalPhone && savedPhone !== phone) {
-      setError('Strict Login Enforced: You can only login with your original registered number (' + savedPhone + ') on this device.');
-      return;
+    // Basic check: if device is locked, must match saved number
+    if (savedPhone && savedPhone !== finalPhone) {
+      // Allow if the input without country code matches saved (for legacy users)
+      if (savedPhone !== sanitizedPhone) {
+        setError('Strict Login Enforced: You can only login with your original registered number (' + savedPhone + ') on this device.');
+        return;
+      }
     }
     
     if (isSignUp && savedPhone) {

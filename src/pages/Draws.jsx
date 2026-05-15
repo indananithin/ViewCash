@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
-import { collection, getDocs, orderBy, query, where, addDoc } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, where, addDoc, onSnapshot } from 'firebase/firestore';
 import { Trophy, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import './Draws.css';
@@ -13,32 +13,30 @@ const Draws = () => {
   const [claimingDrawId, setClaimingDrawId] = useState(null);
 
   useEffect(() => {
-    const fetchDraws = async () => {
-      try {
-        const q = query(collection(db, 'draws'), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const drawsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setDraws(drawsList);
-      } catch (error) {
-        console.error("Error fetching draws:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    const fetchClaims = async () => {
-      if (!user) return;
-      try {
-        const q = query(collection(db, 'claims'), where('uid', '==', user.uid));
-        const snap = await getDocs(q);
+    // Listen to draws
+    const unsubDraws = onSnapshot(query(collection(db, 'draws'), orderBy('createdAt', 'desc')), (snap) => {
+      const drawsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDraws(drawsList);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching draws:", error);
+      setLoading(false);
+    });
+
+    // Listen to user's claims
+    let unsubClaims = () => {};
+    if (user) {
+      unsubClaims = onSnapshot(query(collection(db, 'claims'), where('uid', '==', user.uid)), (snap) => {
         setUserClaims(snap.docs.map(d => ({id: d.id, ...d.data()})));
-      } catch (e) {
+      }, (e) => {
         console.error("Error fetching claims", e);
-      }
-    };
+      });
+    }
     
-    fetchDraws();
-    fetchClaims();
+    return () => {
+      unsubDraws();
+      unsubClaims();
+    };
   }, [user]);
 
   const handleClaim = async (draw) => {
@@ -49,6 +47,7 @@ const Draws = () => {
         drawId: draw.id,
         productId: draw.productId || 'unknown',
         productTitle: draw.title,
+        prizeAmount: draw.prizeAmount || 'N/A',
         uid: user.uid,
         userName: user.name || 'Anonymous',
         userPhone: user.phone || 'Unknown',

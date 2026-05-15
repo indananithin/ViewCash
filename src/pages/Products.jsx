@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
 import { PlayCircle, Clock, Calendar, Gift, X } from 'lucide-react';
 import './Products.css';
 
@@ -45,19 +45,15 @@ const Products = () => {
   };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'products'));
-        const productsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Filter out inactive ones or just show all
-        setProducts(productsList.filter(p => p.active !== false));
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
+    const unsub = onSnapshot(collection(db, 'products'), (snap) => {
+      const productsList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(productsList.filter(p => p.active !== false));
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching products:", error);
+      setLoading(false);
+    });
+    return () => unsub();
   }, []);
 
   const handleWatchAd = async (product) => {
