@@ -87,7 +87,7 @@ const PullToRefresh = ({ children, onRefresh, disabled }) => {
   }, [pullDistance, isRefreshing, disabled, onRefresh]);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', touchAction: disabled ? 'auto' : 'pan-x' }}>
+    <div ref={containerRef} style={{ position: 'relative', touchAction: 'auto' }}>
       {/* Pull Indicator - Centered like in the picture */}
       {!disabled && (
         <div 

@@ -14,13 +14,6 @@ const Wallet = () => {
   const [statusMsg, setStatusMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    // Disable pull-to-refresh on this page
-    document.body.style.overscrollBehaviorY = 'contain';
-    return () => {
-      document.body.style.overscrollBehaviorY = 'auto';
-    };
-  }, []);
 
   const handleWithdraw = async (e) => {
     e.preventDefault();

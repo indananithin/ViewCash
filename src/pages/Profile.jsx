@@ -11,13 +11,6 @@ const Profile = () => {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Disable pull-to-refresh on this page
-    document.body.style.overscrollBehaviorY = 'contain';
-    return () => {
-      document.body.style.overscrollBehaviorY = 'auto';
-    };
-  }, []);
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(user?.name || '');
