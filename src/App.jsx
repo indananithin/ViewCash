@@ -76,60 +76,65 @@ function App() {
     return ("Notification" in window) ? Notification.permission : 'granted';
   });
 
-  const [autoRequestFailed, setAutoRequestFailed] = useState(false);
+  const [waitingForInteraction, setWaitingForInteraction] = useState(false);
 
-  // Attempt auto-request for WebViews/TWAs that support it on load
   useEffect(() => {
     if (!("Notification" in window)) return;
 
     if (Notification.permission === 'default') {
-      const attemptRequest = async () => {
+      setWaitingForInteraction(true);
+
+      const handleUserInteraction = async () => {
         try {
           const perm = await Notification.requestPermission();
           setNotificationPermission(perm);
-          if (perm === 'default') {
-            setAutoRequestFailed(true);
-          }
+          setWaitingForInteraction(false);
         } catch (e) {
-          console.log("Auto request failed", e);
-          setAutoRequestFailed(true);
+          console.log("Request failed", e);
+          setWaitingForInteraction(false);
+        } finally {
+          document.removeEventListener('touchstart', handleUserInteraction);
+          document.removeEventListener('click', handleUserInteraction);
         }
       };
-      
-      // Delay slightly to ensure native environment is ready to catch the prompt
-      const timer = setTimeout(attemptRequest, 800);
-      
-      // If after 3 seconds we are still stuck on default and prompt might have been ignored
-      const fallbackTimer = setTimeout(() => {
-        if (Notification.permission === 'default') {
-          setAutoRequestFailed(true);
-        }
-      }, 3000);
+
+      // Listen for ANY tap on the screen to trigger the prompt
+      document.addEventListener('touchstart', handleUserInteraction);
+      document.addEventListener('click', handleUserInteraction);
 
       return () => {
-        clearTimeout(timer);
-        clearTimeout(fallbackTimer);
+        document.removeEventListener('touchstart', handleUserInteraction);
+        document.removeEventListener('click', handleUserInteraction);
       };
     }
   }, []);
 
-  const handleRequestPermission = () => {
+  const handleManualRequest = () => {
     if ("Notification" in window) {
       Notification.requestPermission().then(permission => {
         setNotificationPermission(permission);
+        setWaitingForInteraction(false);
       });
     } else {
       setNotificationPermission('granted');
     }
   };
 
-  // Keep showing splash if it's default and we are still attempting auto-request
-  if (showSplash || (notificationPermission === 'default' && !autoRequestFailed)) {
-    return <Splash />;
+  // Keep showing splash if it's default and we are waiting for the user to tap the screen
+  if (showSplash || (notificationPermission === 'default' && waitingForInteraction)) {
+    return (
+      <div style={{ position: 'relative', height: '100vh', width: '100vw' }}>
+        <Splash />
+        {/* Invisible overlay to capture the tap and inform the user */}
+        <div style={{ position: 'absolute', bottom: '40px', width: '100%', textAlign: 'center', color: '#fff', zIndex: 999, animation: 'pulse 2s infinite', opacity: 0.8, fontSize: '14px', fontWeight: 'bold' }}>
+          Tap anywhere to continue
+        </div>
+      </div>
+    );
   }
 
-  // If auto-request was ignored/blocked by browser policy, show manual fallback button
-  if (notificationPermission === 'default' && autoRequestFailed) {
+  // Fallback screen just in case the tap listener fails or gets ignored
+  if (notificationPermission === 'default' && !waitingForInteraction) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
@@ -140,7 +145,7 @@ function App() {
           To ensure you never miss a draw or reward, please allow notifications. Tap the button below to continue.
         </p>
         <button 
-          onClick={handleRequestPermission}
+          onClick={handleManualRequest}
           style={{ padding: '14px 28px', background: 'var(--primary-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%', maxWidth: '300px' }}
         >
           Allow Notifications
