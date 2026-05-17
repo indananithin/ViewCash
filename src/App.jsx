@@ -76,6 +76,43 @@ function App() {
     return ("Notification" in window) ? Notification.permission : 'granted';
   });
 
+  const [autoRequestFailed, setAutoRequestFailed] = useState(false);
+
+  // Attempt auto-request for WebViews/TWAs that support it on load
+  useEffect(() => {
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === 'default') {
+      const attemptRequest = async () => {
+        try {
+          const perm = await Notification.requestPermission();
+          setNotificationPermission(perm);
+          if (perm === 'default') {
+            setAutoRequestFailed(true);
+          }
+        } catch (e) {
+          console.log("Auto request failed", e);
+          setAutoRequestFailed(true);
+        }
+      };
+      
+      // Delay slightly to ensure native environment is ready to catch the prompt
+      const timer = setTimeout(attemptRequest, 800);
+      
+      // If after 3 seconds we are still stuck on default and prompt might have been ignored
+      const fallbackTimer = setTimeout(() => {
+        if (Notification.permission === 'default') {
+          setAutoRequestFailed(true);
+        }
+      }, 3000);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(fallbackTimer);
+      };
+    }
+  }, []);
+
   const handleRequestPermission = () => {
     if ("Notification" in window) {
       Notification.requestPermission().then(permission => {
@@ -86,11 +123,13 @@ function App() {
     }
   };
 
-  if (showSplash) {
+  // Keep showing splash if it's default and we are still attempting auto-request
+  if (showSplash || (notificationPermission === 'default' && !autoRequestFailed)) {
     return <Splash />;
   }
 
-  if (notificationPermission === 'default') {
+  // If auto-request was ignored/blocked by browser policy, show manual fallback button
+  if (notificationPermission === 'default' && autoRequestFailed) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
@@ -98,7 +137,7 @@ function App() {
         </svg>
         <h2 style={{ marginBottom: '10px' }}>Enable Notifications</h2>
         <p style={{ color: '#aaa', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.5' }}>
-          To ensure you never miss a draw or reward, please allow notifications. It is required to use the app.
+          To ensure you never miss a draw or reward, please allow notifications. Tap the button below to continue.
         </p>
         <button 
           onClick={handleRequestPermission}
