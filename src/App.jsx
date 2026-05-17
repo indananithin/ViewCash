@@ -76,36 +76,13 @@ function App() {
     return ("Notification" in window) ? Notification.permission : 'granted';
   });
 
-  const [waitingForInteraction, setWaitingForInteraction] = useState(false);
-
   useEffect(() => {
-    if (!("Notification" in window)) return;
-
-    if (Notification.permission === 'default') {
-      setWaitingForInteraction(true);
-
-      const handleUserInteraction = async () => {
-        try {
-          const perm = await Notification.requestPermission();
-          setNotificationPermission(perm);
-          setWaitingForInteraction(false);
-        } catch (e) {
-          console.log("Request failed", e);
-          setWaitingForInteraction(false);
-        } finally {
-          document.removeEventListener('touchstart', handleUserInteraction);
-          document.removeEventListener('click', handleUserInteraction);
-        }
-      };
-
-      // Listen for ANY tap on the screen to trigger the prompt
-      document.addEventListener('touchstart', handleUserInteraction);
-      document.addEventListener('click', handleUserInteraction);
-
-      return () => {
-        document.removeEventListener('touchstart', handleUserInteraction);
-        document.removeEventListener('click', handleUserInteraction);
-      };
+    if ("Notification" in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        setNotificationPermission(permission);
+      }).catch(e => {
+        console.log("Request failed", e);
+      });
     }
   }, []);
 
@@ -113,47 +90,18 @@ function App() {
     if ("Notification" in window) {
       Notification.requestPermission().then(permission => {
         setNotificationPermission(permission);
-        setWaitingForInteraction(false);
       });
     } else {
       setNotificationPermission('granted');
     }
   };
 
-  // Keep showing splash if it's default and we are waiting for the user to tap the screen
-  if (showSplash || (notificationPermission === 'default' && waitingForInteraction)) {
-    return (
-      <div style={{ position: 'relative', height: '100vh', width: '100vw' }}>
-        <Splash />
-        {/* Invisible overlay to capture the tap and inform the user */}
-        <div style={{ position: 'absolute', bottom: '40px', width: '100%', textAlign: 'center', color: '#fff', zIndex: 999, animation: 'pulse 2s infinite', opacity: 0.8, fontSize: '14px', fontWeight: 'bold' }}>
-          Tap anywhere to continue
-        </div>
-      </div>
-    );
+  // Keep showing splash if it's default
+  if (showSplash || notificationPermission === 'default') {
+    return <Splash />;
   }
 
-  // Fallback screen just in case the tap listener fails or gets ignored
-  if (notificationPermission === 'default' && !waitingForInteraction) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-        <h2 style={{ marginBottom: '10px' }}>Enable Notifications</h2>
-        <p style={{ color: '#aaa', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.5' }}>
-          To ensure you never miss a draw or reward, please allow notifications. Tap the button below to continue.
-        </p>
-        <button 
-          onClick={handleManualRequest}
-          style={{ padding: '14px 28px', background: 'var(--primary-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%', maxWidth: '300px' }}
-        >
-          Allow Notifications
-        </button>
-      </div>
-    );
-  }
-
+  // Fallback screen if permission is denied
   if (notificationPermission !== 'granted') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
