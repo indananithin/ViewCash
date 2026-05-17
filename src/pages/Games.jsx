@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gamepad2, Puzzle, PlayCircle, X } from 'lucide-react';
+import { Gamepad2, Puzzle, PlayCircle, X, Grid3X3 } from 'lucide-react';
 import './Games.css';
 
 const Games = () => {
@@ -29,7 +29,15 @@ const Games = () => {
       icon: <Gamepad2 size={32} color="white" />,
       color: 'var(--accent-gradient)',
       desc: 'Flip cards and find the matching pairs.',
-      playable: false
+      playable: true
+    },
+    {
+      id: 'sudoku',
+      title: 'Sudoku',
+      icon: <Grid3X3 size={32} color="white" />,
+      color: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+      desc: 'Classic 9x9 number puzzle. Fill the grid!',
+      playable: true
     }
   ];
 
@@ -77,6 +85,10 @@ const Games = () => {
                 <TicTacToe />
               ) : activeGame.id === 'slidepuzzle' ? (
                 <SlidePuzzle />
+              ) : activeGame.id === 'memory' ? (
+                <MemoryMatch />
+              ) : activeGame.id === 'sudoku' ? (
+                <Sudoku />
               ) : (
                 <div className="game-coming-soon">
                   <Gamepad2 size={48} color="var(--text-light)" />
@@ -236,6 +248,216 @@ const SlidePuzzle = () => {
 
       <button className="btn-reset-game" onClick={shuffleBoard}>
         Restart Puzzle
+      </button>
+    </div>
+  );
+};
+
+const MemoryMatch = () => {
+  const emojis = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍒', '🍍', '🥝'];
+  const [cards, setCards] = useState([]);
+  const [flipped, setFlipped] = useState([]);
+  const [matched, setMatched] = useState(new Set());
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    initGame();
+  }, []);
+
+  const initGame = () => {
+    const shuffledCards = [...emojis, ...emojis]
+      .sort(() => Math.random() - 0.5)
+      .map((emoji, idx) => ({ id: idx, emoji }));
+    setCards(shuffledCards);
+    setFlipped([]);
+    setMatched(new Set());
+    setIsLocked(false);
+  };
+
+  const handleCardClick = (index) => {
+    if (isLocked || flipped.includes(index) || matched.has(index)) return;
+
+    const newFlipped = [...flipped, index];
+    setFlipped(newFlipped);
+
+    if (newFlipped.length === 2) {
+      setIsLocked(true);
+      const [first, second] = newFlipped;
+      if (cards[first].emoji === cards[second].emoji) {
+        setMatched(new Set([...matched, first, second]));
+        setFlipped([]);
+        setIsLocked(false);
+      } else {
+        setTimeout(() => {
+          setFlipped([]);
+          setIsLocked(false);
+        }, 1000);
+      }
+    }
+  };
+
+  const isSolved = matched.size === cards.length && cards.length > 0;
+
+  return (
+    <div className="memory-container tictactoe-container">
+      <div className="tictactoe-status" style={{ minHeight: '27px' }}>
+        {isSolved ? (
+          <span className="winner-text">You found all pairs! 🎉</span>
+        ) : (
+          <span>Find the matching pairs</span>
+        )}
+      </div>
+
+      <div className="memory-board">
+        {cards.map((card, i) => (
+          <button
+            key={card.id}
+            className={`memory-card ${flipped.includes(i) || matched.has(i) ? 'flipped' : ''}`}
+            onClick={() => handleCardClick(i)}
+          >
+            <div className="memory-card-inner">
+              <div className="memory-card-front">❓</div>
+              <div className="memory-card-back">{card.emoji}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <button className="btn-reset-game" onClick={initGame}>
+        Restart Game
+      </button>
+    </div>
+  );
+};
+
+const Sudoku = () => {
+  const INITIAL_BOARD = [
+    [5,3,4,6,7,8,9,1,2],
+    [6,7,2,1,9,5,3,4,8],
+    [1,9,8,3,4,2,5,6,7],
+    [8,5,9,7,6,1,4,2,3],
+    [4,2,6,8,5,3,7,9,1],
+    [7,1,3,9,2,4,8,5,6],
+    [9,6,1,5,3,7,2,8,4],
+    [2,8,7,4,1,9,6,3,5],
+    [3,4,5,2,8,6,1,7,9]
+  ];
+
+  const [board, setBoard] = useState([]);
+  const [initialMask, setInitialMask] = useState([]);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [isSolved, setIsSolved] = useState(false);
+  const [solution, setSolution] = useState([]);
+
+  useEffect(() => {
+    initGame();
+  }, []);
+
+  const initGame = () => {
+    const newBoard = JSON.parse(JSON.stringify(INITIAL_BOARD));
+    // Randomize rows within 3x3 blocks
+    for(let block=0; block<3; block++){
+       const rows = [block*3, block*3+1, block*3+2].sort(() => Math.random() - 0.5);
+       const temp1 = [...newBoard[block*3]];
+       const temp2 = [...newBoard[block*3+1]];
+       const temp3 = [...newBoard[block*3+2]];
+       newBoard[rows[0]] = temp1;
+       newBoard[rows[1]] = temp2;
+       newBoard[rows[2]] = temp3;
+    }
+    
+    setSolution(newBoard);
+
+    const puzzle = newBoard.map(row => [...row]);
+    const mask = Array(9).fill().map(() => Array(9).fill(false));
+    
+    let removed = 0;
+    while(removed < 35) {
+      let r = Math.floor(Math.random() * 9);
+      let c = Math.floor(Math.random() * 9);
+      if (puzzle[r][c] !== null) {
+        puzzle[r][c] = null;
+        mask[r][c] = true;
+        removed++;
+      }
+    }
+    
+    setBoard(puzzle);
+    setInitialMask(mask);
+    setIsSolved(false);
+    setSelectedCell(null);
+  };
+
+  const checkWin = (currentBoard) => {
+    for(let r=0; r<9; r++){
+      for(let c=0; c<9; c++){
+        if(currentBoard[r][c] !== solution[r][c]) return;
+      }
+    }
+    setIsSolved(true);
+  };
+
+  const handleCellClick = (r, c) => {
+    if (initialMask[r][c] && !isSolved) {
+      setSelectedCell([r, c]);
+    }
+  };
+
+  const handleNumberInput = (num) => {
+    if (selectedCell && !isSolved) {
+      const [r, c] = selectedCell;
+      const newBoard = [...board];
+      newBoard[r] = [...newBoard[r]];
+      newBoard[r][c] = num;
+      setBoard(newBoard);
+      checkWin(newBoard);
+    }
+  };
+
+  return (
+    <div className="sudoku-container tictactoe-container">
+      <div className="tictactoe-status" style={{ minHeight: '27px' }}>
+        {isSolved ? (
+          <span className="winner-text">Sudoku Solved! 🎉</span>
+        ) : (
+          <span>Fill the numbers 1-9</span>
+        )}
+      </div>
+
+      <div className="sudoku-board">
+        {board.map((row, r) => (
+          <div key={r} className="sudoku-row">
+            {row.map((cell, c) => (
+              <div 
+                key={`${r}-${c}`}
+                className={`sudoku-cell 
+                  ${c === 2 || c === 5 ? 'border-right' : ''} 
+                  ${r === 2 || r === 5 ? 'border-bottom' : ''}
+                  ${selectedCell && selectedCell[0] === r && selectedCell[1] === c ? 'selected' : ''}
+                  ${!initialMask[r][c] ? 'fixed' : 'editable'}
+                `}
+                onClick={() => handleCellClick(r, c)}
+              >
+                {cell || ''}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {!isSolved && (
+        <div className="sudoku-keypad">
+          {[1,2,3,4,5,6,7,8,9].map(num => (
+            <button key={num} className="sudoku-key" onClick={() => handleNumberInput(num)}>
+              {num}
+            </button>
+          ))}
+          <button className="sudoku-key clear-key" onClick={() => handleNumberInput(null)}>X</button>
+        </div>
+      )}
+
+      <button className="btn-reset-game" onClick={initGame} style={{marginTop: '16px'}}>
+        New Game
       </button>
     </div>
   );

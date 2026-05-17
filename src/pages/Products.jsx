@@ -71,24 +71,23 @@ const Products = () => {
       newDaysClaimed += 1; // Claims 1 ticket for the day
       coinsEarnedToday += 1; // 1 coin for daily ticket watch
       
-      // Bonus logic: 6 days claimed = bonus 3 tickets + 3 coins
-      if (newDaysClaimed % 6 === 0) {
+      // Bonus logic: 6 days claimed = bonus 3 tickets
+      if (newDaysClaimed === 6) {
          newTickets += 3;
-         coinsEarnedToday += 3; // 3 coins bonus for 6 days streak
          
          setCongratsState({
            isOpen: true,
            title: '🎉 Streak Qualified!',
-           message: `Congratulations! You have watched ads for 6 days! You have earned 3 bonus tickets and 3 bonus coins!`,
+           message: `congratulations u earned 3 more tickets and qualified for the draw`,
            ticketsEarned: 3,
-           coinsEarned: 3
+           coinsEarned: 1
          });
 
          try {
            await addDoc(collection(db, 'notifications'), {
              userId: user.uid,
              title: '🎉 Streak Reward Unlocked!',
-             message: `Congratulations! You watched ads for 6 days and earned 3 more tickets and 3 bonus coins!`,
+             message: `congratulations u earned 3 more tickets and qualified for the draw`,
              type: 'success',
              createdAt: new Date().toISOString()
            });
@@ -99,17 +98,16 @@ const Products = () => {
          setCongratsState({
            isOpen: true,
            title: '🎉 Ticket Earned!',
-           message: `Ticket earned successfully! and 1 coin earned!`,
+           message: `ticket earned successfully and 1 coin earned`,
            ticketsEarned: 1,
            coinsEarned: 1
          });
       }
     } else {
-      const remainingTickets = 6 - (daysClaimed % 6);
       setCongratsState({
         isOpen: true,
         title: '📺 Ad Watched!',
-        message: `Ad watched ! Progress [${adsWatchedToday}/${adsRequiredPerTicket}]\nEarn ${remainingTickets} more tickets to get 3 free tickets ! And get qualified for draw`,
+        message: `ad watchd! progress[${adsWatchedToday}/${adsRequiredPerTicket}]`,
         ticketsEarned: 0,
         coinsEarned: 0
       });
@@ -322,16 +320,15 @@ const Products = () => {
               
               const daysClaimed = productData.daysClaimed || 0;
               const qualifyingTarget = 6;
-              const currentQualifyingDays = daysClaimed % qualifyingTarget;
-              const isQualifiedForBonus = currentQualifyingDays === 0 && daysClaimed > 0;
-              const qualifyingDaysDisplay = isQualifiedForBonus ? qualifyingTarget : currentQualifyingDays;
+              const isQualifiedForBonus = daysClaimed >= 6;
+              const qualifyingDaysDisplay = isQualifiedForBonus ? 6 : daysClaimed;
 
               const ticketsEarned = productData.tickets || 0;
               const isTodayBrought = adsWatchedToday >= adsRequired;
 
               let streakMessage = "";
               if (isQualifiedForBonus) {
-                streakMessage = "Congratulations! You have qualified for 3 tickets.";
+                streakMessage = "Congratulations! You have qualified for the draw.";
               } else {
                 const remainingDays = 6 - qualifyingDaysDisplay;
                 streakMessage = `Earn ${remainingDays} more tickets to get 3 FREE tickets! and qualify for draw`;
