@@ -76,19 +76,38 @@ function App() {
     return ("Notification" in window) ? Notification.permission : 'granted';
   });
 
-  // Request Notification Permission
-  useEffect(() => {
+  const handleRequestPermission = () => {
     if ("Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then(permission => {
-          setNotificationPermission(permission);
-        });
-      }
+      Notification.requestPermission().then(permission => {
+        setNotificationPermission(permission);
+      });
+    } else {
+      setNotificationPermission('granted');
     }
-  }, []);
+  };
 
-  if (showSplash || notificationPermission === 'default') {
+  if (showSplash) {
     return <Splash />;
+  }
+
+  if (notificationPermission === 'default') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        <h2 style={{ marginBottom: '10px' }}>Enable Notifications</h2>
+        <p style={{ color: '#aaa', marginBottom: '30px', maxWidth: '300px', lineHeight: '1.5' }}>
+          To ensure you never miss a draw or reward, please allow notifications. It is required to use the app.
+        </p>
+        <button 
+          onClick={handleRequestPermission}
+          style={{ padding: '14px 28px', background: 'var(--primary-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '16px', width: '100%', maxWidth: '300px' }}
+        >
+          Allow Notifications
+        </button>
+      </div>
+    );
   }
 
   if (notificationPermission !== 'granted') {
