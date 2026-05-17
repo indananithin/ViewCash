@@ -16,15 +16,16 @@ const Home = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(50));
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map(d => d.data());
+      const filtered = docs.filter(n => !n.userId || n.userId === user?.uid);
       const lastChecked = user?.lastCheckedNotifications || new Date(0).toISOString();
-      const count = docs.filter(n => n.createdAt > lastChecked).length;
+      const count = filtered.filter(n => n.createdAt > lastChecked).length;
       setUnreadCount(count);
     });
     return () => unsub();
-  }, [user?.lastCheckedNotifications]);
+  }, [user?.lastCheckedNotifications, user?.uid]);
 
   const confirmLogout = async () => {
     await logout();

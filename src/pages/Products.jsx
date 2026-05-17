@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, increment, onSnapshot, addDoc } from 'firebase/firestore';
 import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/ConfirmModal';
@@ -20,6 +20,15 @@ const Products = () => {
     product: null
   });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [congratsState, setCongratsState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    ticketsEarned: 0,
+    coinsEarned: 0
+  });
+  const [isAdPaused, setIsAdPaused] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const handleWatchAd = async (product) => {
     if (!user) return;
@@ -52,19 +61,43 @@ const Products = () => {
     
     // Simulate watching an ad
     adsWatchedToday += 1;
+    setToastMessage(`Ad progress [${adsWatchedToday}/${adsRequiredPerTicket}]`);
+    
     let newTickets = tickets;
     let newDaysClaimed = daysClaimed;
+    let coinsEarnedToday = 0;
     
     if (adsWatchedToday >= adsRequiredPerTicket) {
       newTickets += 1;
       newDaysClaimed += 1; // Claims 1 ticket for the day
+      coinsEarnedToday += 1; // 1 coin for daily ticket watch
       
-      // Bonus logic: 6 days claimed = bonus 3 tickets
+      // Bonus logic: 6 days claimed = bonus 3 tickets + 3 coins
       if (newDaysClaimed % 6 === 0) {
          newTickets += 3;
-         alert(`Congratulations! You've claimed tickets for 6 days and earned 3 BONUS tickets!`);
+         coinsEarnedToday += 3; // 3 coins bonus for 6 days streak
+         
+         setCongratsState({
+           isOpen: true,
+           title: '🎉 Streak Qualified!',
+           message: `Congratulations! You have watched ads for 6 days! You have earned 3 bonus tickets and 3 bonus coins!`,
+           ticketsEarned: 3,
+           coinsEarned: 3
+         });
+
+         try {
+           await addDoc(collection(db, 'notifications'), {
+             userId: user.uid,
+             title: '🎉 Streak Reward Unlocked!',
+             message: `Congratulations! You watched ads for 6 days and earned 3 more tickets and 3 bonus coins!`,
+             type: 'success',
+             createdAt: new Date().toISOString()
+           });
+         } catch (e) {
+           console.error("Error creating streak notification:", e);
+         }
       } else {
-         alert(`You have watched all ads for today and earned a ticket for ${product.title}!`);
+         alert(`You have watched all ads for today and earned a ticket for ${product.title} and 1 coin!`);
       }
     }
     
@@ -76,15 +109,27 @@ const Products = () => {
     };
 
     try {
-      await updateDoc(userRef, {
+      const updateFields = {
         [`productProgress.${product.id}`]: updatedProductData
-      });
-      setUser({
-        ...user,
-        productProgress: {
-          ...(user.productProgress || {}),
-          [product.id]: updatedProductData
+      };
+      if (coinsEarnedToday > 0) {
+        updateFields.coins = (user.coins || 0) + coinsEarnedToday;
+      }
+      
+      await updateDoc(userRef, updateFields);
+      
+      setUser(prev => {
+        const nextUser = {
+          ...prev,
+          productProgress: {
+            ...(prev.productProgress || {}),
+            [product.id]: updatedProductData
+          }
+        };
+        if (coinsEarnedToday > 0) {
+          nextUser.coins = (prev.coins || 0) + coinsEarnedToday;
         }
+        return nextUser;
       });
     } catch (error) {
       console.error("Error updating ad progress:", error);
@@ -108,10 +153,59 @@ const Products = () => {
     setShowExitConfirm(false);
   };
 
+  // Auto-clear toast message after 3.5 seconds
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage('');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  // Manage visibility/focus pausing for strict ad watching
+  useEffect(() => {
+    if (!adState.isOpen) {
+      setIsAdPaused(false);
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden || document.visibilityState === 'hidden') {
+        setIsAdPaused(true);
+      } else {
+        setIsAdPaused(false);
+      }
+    };
+
+    const handleWindowBlur = () => {
+      setIsAdPaused(true);
+    };
+
+    const handleWindowFocus = () => {
+      setIsAdPaused(false);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('focus', handleWindowFocus);
+
+    // Initial check
+    if (document.hidden) {
+      setIsAdPaused(true);
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [adState.isOpen]);
+
   // Handle strict ad timer
   useEffect(() => {
     let timer;
-    if (adState.isOpen && adState.timeLeft > 0) {
+    if (adState.isOpen && adState.timeLeft > 0 && !isAdPaused) {
       timer = setInterval(() => {
         setAdState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 }));
       }, 1000);
@@ -121,7 +215,7 @@ const Products = () => {
       setAdState({ isOpen: false, timeLeft: 0, product: null });
     }
     return () => clearInterval(timer);
-  }, [adState.isOpen, adState.timeLeft]);
+  }, [adState.isOpen, adState.timeLeft, isAdPaused]);
 
   // Prevent back-button navigation during ad
   useEffect(() => {
@@ -220,6 +314,18 @@ const Products = () => {
 
               const ticketsEarned = productData.tickets || 0;
               const isTodayBrought = adsWatchedToday >= adsRequired;
+
+              let streakMessage = "";
+              if (isQualifiedForBonus) {
+                streakMessage = "Congratulations! You have qualified for 3 tickets.";
+              } else {
+                const remainingDays = 6 - qualifyingDaysDisplay;
+                if (remainingDays === 6) {
+                  streakMessage = "Watch ads (6) days to get qualified for 3 more tickets";
+                } else {
+                  streakMessage = `Watch ${remainingDays} more day${remainingDays > 1 ? 's' : ''} to get qualified for 3 more tickets`;
+                }
+              }
               
               return (
                 <div key={product.id} className="product-card" style={{ background: '#FFFBEB', borderColor: '#FEF3C7' }}>
@@ -265,14 +371,17 @@ const Products = () => {
                       ></div>
                     </div>
                     <div style={{ marginTop: '8px' }}>
-                      <p style={{ color: '#C2410C', fontSize: '12px', fontWeight: '500' }}>
+                      <p style={{ color: '#C2410C', fontSize: '12px', fontWeight: '500', marginBottom: '4px' }}>
                         🎯 Progress: {qualifyingDaysDisplay}/{qualifyingTarget} tickets ({(qualifyingDaysDisplay / qualifyingTarget * 100).toFixed(0)}%)
                       </p>
-                      {isQualifiedForBonus && (
-                        <p style={{ color: '#059669', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>
-                          🥳 You qualified for 3 FREE tickets!
-                        </p>
-                      )}
+                      <p style={{ 
+                        color: isQualifiedForBonus ? '#059669' : '#C2410C', 
+                        fontSize: '13px', 
+                        fontWeight: 'bold',
+                        marginTop: '4px'
+                      }}>
+                        {isQualifiedForBonus ? '🥳' : '⚡'} {streakMessage}
+                      </p>
                     </div>
                   </div>
 
@@ -316,7 +425,41 @@ const Products = () => {
       {/* Strict Ad Modal - Rendered via Portal to escape stacking contexts */}
       {adState.isOpen && createPortal(
         <div className="ad-modal-overlay">
-          <div className="ad-modal-content">
+          <div className="ad-modal-content" style={{ position: 'relative', overflow: 'hidden' }}>
+            {isAdPaused ? (
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(255, 255, 255, 0.95)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '24px',
+                zIndex: 20
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: '#FEF3C7',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginBottom: '16px',
+                  animation: 'pulse 1.5s infinite'
+                }}>
+                  <AlertTriangle size={32} color="#D97706" />
+                </div>
+                <h3 style={{ color: '#92400E', fontSize: '20px', marginBottom: '8px', textAlign: 'center' }}>Ad Paused!</h3>
+                <p style={{ color: '#B45309', fontSize: '13px', lineHeight: '1.5', textAlign: 'center', margin: 0 }}>
+                  Please stay on the ad screen to continue earning. The timer will resume automatically once you return.
+                </p>
+              </div>
+            ) : null}
             <h3>Watching Ad...</h3>
             <p>Please wait to claim your ticket.</p>
             <div className="ad-timer-circle">
@@ -328,6 +471,60 @@ const Products = () => {
               Cancel Ad
             </button>
           </div>
+          <style>{`
+            @keyframes pulse {
+              0% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.1); opacity: 0.8; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>,
+        document.body
+      )}
+
+      {/* Toast Notification - Rendered via Portal */}
+      {toastMessage && createPortal(
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(31, 41, 55, 0.95)',
+          backdropFilter: 'blur(8px)',
+          color: 'white',
+          padding: '14px 24px',
+          borderRadius: '16px',
+          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          zIndex: 12000,
+          animation: 'slideUpFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          maxWidth: '90%',
+          width: 'max-content',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FF8008 0%, #FFC837 100%)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontSize: '12px'
+          }}>
+            📺
+          </div>
+          <span style={{ fontSize: '14px', fontWeight: '600', letterSpacing: '0.2px' }}>
+            {toastMessage}
+          </span>
+          <style>{`
+            @keyframes slideUpFadeIn {
+              from { opacity: 0; transform: translate(-50%, 15px); }
+              to { opacity: 1; transform: translate(-50%, 0); }
+            }
+          `}</style>
         </div>,
         document.body
       )}
@@ -343,6 +540,127 @@ const Products = () => {
           cancelText="Keep Watching"
           iconType="warning"
         />,
+        document.body
+      )}
+
+      {/* Congrats Streak Modal - Rendered via Portal */}
+      {congratsState.isOpen && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 11000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '28px',
+            width: '100%',
+            maxWidth: '340px',
+            padding: '32px 24px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)',
+            animation: 'modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            position: 'relative',
+            textAlign: 'center',
+            border: '2px solid #FEF3C7'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              margin: '0 auto 20px',
+              boxShadow: '0 10px 20px rgba(255, 165, 0, 0.4)',
+              position: 'relative'
+            }}>
+              <Sparkles size={38} color="white" />
+            </div>
+
+            <h3 style={{ 
+              fontSize: '22px', 
+              fontWeight: 'bold', 
+              color: '#92400E', 
+              marginBottom: '12px',
+              fontFamily: '"Outfit", sans-serif'
+            }}>
+              {congratsState.title}
+            </h3>
+
+            <p style={{ 
+              fontSize: '14px', 
+              color: '#6B7280', 
+              lineHeight: '1.6', 
+              marginBottom: '24px' 
+            }}>
+              {congratsState.message}
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center',
+              marginBottom: '24px'
+            }}>
+              <div style={{
+                flex: 1,
+                background: '#FEF3C7',
+                border: '1px solid #FDE68A',
+                borderRadius: '16px',
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span style={{ fontSize: '20px' }}>🎫</span>
+                <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+3 Tickets</span>
+              </div>
+              <div style={{
+                flex: 1,
+                background: '#FEF3C7',
+                border: '1px solid #FDE68A',
+                borderRadius: '16px',
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span style={{ fontSize: '20px' }}>🪙</span>
+                <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+3 Coins</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setCongratsState(prev => ({ ...prev, isOpen: false }))}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '16px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #FF8008 0%, #FFC837 100%)',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                cursor: 'pointer',
+                boxShadow: '0 8px 20px rgba(255, 128, 8, 0.3)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              Awesome!
+            </button>
+          </div>
+        </div>,
         document.body
       )}
     </div>

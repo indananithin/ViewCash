@@ -171,25 +171,46 @@ const AdminDashboard = () => {
     try {
       await updateDoc(doc(db, 'withdrawals', id), { status: newStatus });
       
-      if (newStatus === 'Rejected' && uid && amount) {
-        const userRef = doc(db, 'users', uid);
-        await updateDoc(userRef, { coins: increment(amount) });
-      }
-
-      // Send Notification to user (optional: you could filter notifications by UID in the future)
+      // Send Notification to user
       await addDoc(collection(db, 'notifications'), {
-        title: `Withdrawal ${newStatus}`,
-        message: newStatus === 'Approved' 
-          ? `Your withdrawal of ${amount} coins has been processed.` 
-          : `Your withdrawal of ${amount} coins was rejected and refunded.`,
-        type: newStatus === 'Approved' ? 'success' : 'alert',
-        uid: uid, // Store UID to potentially filter in the future
+        title: `Withdrawal Status Update`,
+        message: newStatus === 'Done' 
+          ? `Your withdrawal of ${amount} coins has been completed successfully.` 
+          : `Your withdrawal of ${amount} coins is currently marked as Not Done.`,
+        type: newStatus === 'Done' ? 'success' : 'alert',
+        userId: uid,
         createdAt: new Date().toISOString()
       });
       
       setWithdrawalsList(withdrawalsList.map(w => w.id === id ? {...w, status: newStatus} : w));
     } catch(e) {
       console.error(e);
+    }
+  };
+
+  const handleUpdateClaim = async (id, newStatus, uid, productTitle) => {
+    try {
+      await updateDoc(doc(db, 'claims', id), { 
+        status: newStatus,
+        settledAt: newStatus === 'Done' ? new Date().toISOString() : null
+      });
+
+      // Send Notification to user
+      if (uid) {
+        await addDoc(collection(db, 'notifications'), {
+          title: `Claim Status Update`,
+          message: newStatus === 'Done' 
+            ? `Your claim for ${productTitle} has been marked as Done.` 
+            : `Your claim for ${productTitle} is currently marked as Not Done.`,
+          type: newStatus === 'Done' ? 'success' : 'alert',
+          userId: uid,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      setClaimsList(claimsList.map(c => c.id === id ? {...c, status: newStatus, settledAt: newStatus === 'Done' ? new Date().toISOString() : null} : c));
+    } catch (e) {
+      console.error("Error updating claim:", e);
     }
   };
 
@@ -250,14 +271,50 @@ const AdminDashboard = () => {
                     <td>{w.userName || 'User'}</td>
                     <td>{w.amount} Coins</td>
                     <td>{w.upiId}</td>
-                    <td>{w.status}</td>
-                    <td className="action-cell">
-                      {w.status === 'Pending' && (
-                        <>
-                          <button className="btn-approve" onClick={() => handleUpdateWithdrawal(w.id, 'Approved', w.uid, w.amount)}><CheckCircle size={16}/></button>
-                          <button className="btn-reject" onClick={() => handleUpdateWithdrawal(w.id, 'Rejected', w.uid, w.amount)}><XCircle size={16}/></button>
-                        </>
-                      )}
+                    <td>
+                      <span className={`status-badge ${w.status === 'Done' ? 'approved' : 'pending'}`}>
+                        {w.status || 'Not Done'}
+                      </span>
+                    </td>
+                    <td className="action-cell" style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        style={{
+                          background: w.status === 'Done' ? '#10B981' : '#E5E7EB',
+                          color: w.status === 'Done' ? 'white' : '#374151',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => handleUpdateWithdrawal(w.id, 'Done', w.uid, w.amount)}
+                      >
+                        <CheckCircle size={14}/> Done
+                      </button>
+                      <button 
+                        style={{
+                          background: (w.status === 'Not Done' || !w.status || w.status === 'Pending') ? '#EF4444' : '#E5E7EB',
+                          color: (w.status === 'Not Done' || !w.status || w.status === 'Pending') ? 'white' : '#374151',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => handleUpdateWithdrawal(w.id, 'Not Done', w.uid, w.amount)}
+                      >
+                        <XCircle size={14}/> Not Done
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -389,37 +446,55 @@ const AdminDashboard = () => {
                     <td>{c.prizeAmount || 'N/A'}</td>
                     <td>{c.userPhone}</td>
                     <td>
-                      <span className={`status-badge ${c.status === 'Pending' ? 'pending' : 'approved'}`}>
-                        {c.status}
+                      <span className={`status-badge ${c.status === 'Done' ? 'approved' : 'pending'}`}>
+                        {c.status || 'Not Done'}
                       </span>
                     </td>
-                    <td className="action-cell">
-                      {c.status === 'Pending' && (
-                        <button 
-                          className="btn-approve" 
-                          onClick={async () => {
-                            if (window.confirm('Mark this claim as settled?')) {
-                              try {
-                                await updateDoc(doc(db, 'claims', c.id), { 
-                                  status: 'Claimed', 
-                                  settledAt: new Date().toISOString() 
-                                });
-                                setClaimsList(claimsList.map(item => item.id === c.id ? {...item, status: 'Claimed', settledAt: new Date().toISOString()} : item));
-                              } catch(e) {
-                                console.error('Error settling claim', e);
-                              }
-                            }
-                          }}
-                        >
-                          <CheckCircle size={16}/> Settle
-                        </button>
-                      )}
+                    <td className="action-cell" style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        style={{
+                          background: c.status === 'Done' ? '#10B981' : '#E5E7EB',
+                          color: c.status === 'Done' ? 'white' : '#374151',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => handleUpdateClaim(c.id, 'Done', c.uid, c.productTitle)}
+                      >
+                        <CheckCircle size={14}/> Done
+                      </button>
+                      <button 
+                        style={{
+                          background: (c.status === 'Not Done' || !c.status || c.status === 'Pending') ? '#EF4444' : '#E5E7EB',
+                          color: (c.status === 'Not Done' || !c.status || c.status === 'Pending') ? 'white' : '#374151',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.2s'
+                        }}
+                        onClick={() => handleUpdateClaim(c.id, 'Not Done', c.uid, c.productTitle)}
+                      >
+                        <XCircle size={14}/> Not Done
+                      </button>
                     </td>
                   </tr>
                 ))}
                 {claimsList.length === 0 && (
                   <tr>
-                    <td colSpan="5" style={{textAlign:'center'}}>No claims yet.</td>
+                    <td colSpan="6" style={{textAlign:'center'}}>No claims yet.</td>
                   </tr>
                 )}
               </tbody>

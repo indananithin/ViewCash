@@ -15,7 +15,9 @@ const Notifications = () => {
   useEffect(() => {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
-      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const allNotifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const filtered = allNotifs.filter(n => !n.userId || n.userId === user?.uid);
+      setNotifications(filtered);
       setLoading(false);
     }, (err) => {
       console.error("Error fetching notifications:", err);

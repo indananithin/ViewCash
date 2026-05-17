@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { Coins, IndianRupee, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Wallet.css';
@@ -13,6 +13,18 @@ const Wallet = () => {
   const [amount, setAmount] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [withdrawals, setWithdrawals] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, 'withdrawals'), where('uid', '==', user.uid), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setWithdrawals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (error) => {
+      console.error("Error fetching user withdrawals:", error);
+    });
+    return () => unsub();
+  }, [user]);
 
 
   const handleWithdraw = async (e) => {
@@ -44,7 +56,7 @@ const Wallet = () => {
         userName: user.name,
         amount: numAmount,
         upiId: upiId,
-        status: 'Pending',
+        status: 'Not Done',
         createdAt: new Date().toISOString()
       });
 
@@ -137,20 +149,28 @@ const Wallet = () => {
       <div className="history-section">
         <h3>Recent Transactions</h3>
         <div className="transaction-list">
-          {/* We keep mock transactions here for visual structure, but in a real app, we'd fetch them from Firestore */}
-          <div className="transaction-item">
-            <div className="tx-info">
-              <div className="tx-icon withdraw"><IndianRupee size={16} /></div>
-              <div>
-                <p className="tx-title">UPI Withdrawal</p>
-                <small className="tx-date">Oct 24, 2026</small>
+          {withdrawals.map(w => (
+            <div key={w.id} className="transaction-item">
+              <div className="tx-info">
+                <div className="tx-icon withdraw"><IndianRupee size={16} /></div>
+                <div>
+                  <p className="tx-title">UPI Withdrawal</p>
+                  <small className="tx-date">{new Date(w.createdAt).toLocaleDateString()}</small>
+                </div>
+              </div>
+              <div className="tx-status">
+                <span className="tx-amount negative">-{w.amount} Coins</span>
+                <span className={`badge-status ${w.status === 'Done' ? 'approved' : 'pending'}`}>
+                  {w.status === 'Done' ? 'Done' : 'Not Done'}
+                </span>
               </div>
             </div>
-            <div className="tx-status">
-              <span className="tx-amount negative">-100 Coins</span>
-              <span className="badge-status pending"><Clock size={12}/> Pending</span>
-            </div>
-          </div>
+          ))}
+          {withdrawals.length === 0 && (
+            <p style={{ color: '#9CA3AF', fontSize: '14px', textAlign: 'center', margin: '20px 0' }}>
+              No withdrawals submitted yet.
+            </p>
+          )}
         </div>
       </div>
     </div>

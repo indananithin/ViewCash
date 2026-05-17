@@ -53,7 +53,7 @@ const Draws = () => {
         uid: user.uid,
         userName: user.name || 'Anonymous',
         userPhone: user.phone || 'Unknown',
-        status: 'Pending',
+        status: 'Not Done',
         claimedAt: new Date().toISOString()
       };
       const docRef = await addDoc(collection(db, 'claims'), claimData);
@@ -142,10 +142,17 @@ const Draws = () => {
                         {claimingDrawId === draw.id ? 'Submitting...' : 'Claim The Product'}
                       </button>
                     ) : (
-                      <div style={{fontWeight: 'bold', fontSize: '14px', color: userClaim.status === 'Pending' ? '#ca8a04' : '#16a34a', background: 'white', padding: '8px', borderRadius: '6px'}}>
-                        {userClaim.status === 'Pending' 
-                          ? "Status: Pending claim (We will contact you shortly)" 
-                          : `Status: Claimed successfully on ${new Date(userClaim.settledAt || userClaim.claimedAt).toLocaleDateString()}`
+                      <div style={{
+                        fontWeight: 'bold', 
+                        fontSize: '14px', 
+                        color: userClaim.status === 'Done' ? '#16a34a' : '#ca8a04', 
+                        background: 'white', 
+                        padding: '8px', 
+                        borderRadius: '6px'
+                      }}>
+                        {userClaim.status === 'Done' 
+                          ? `Status: Claimed successfully on ${new Date(userClaim.settledAt || userClaim.claimedAt).toLocaleDateString()}`
+                          : "Status: Pending claim (We will contact you shortly)"
                         }
                       </div>
                     )}
