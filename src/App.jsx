@@ -72,15 +72,43 @@ function App() {
     }
   }, [showSplash, loading]);
 
+  const [notificationPermission, setNotificationPermission] = useState(() => {
+    return ("Notification" in window) ? Notification.permission : 'granted';
+  });
+
   // Request Notification Permission
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    if ("Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
     }
   }, []);
 
-  if (showSplash) {
+  if (showSplash || notificationPermission === 'default') {
     return <Splash />;
+  }
+
+  if (notificationPermission !== 'granted') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h2 style={{ marginBottom: '10px' }}>Notifications Required</h2>
+        <p style={{ color: '#aaa', marginBottom: '20px', maxWidth: '300px', lineHeight: '1.5' }}>
+          You must allow notifications to use ViewCash. Please enable them in your device settings and reload.
+        </p>
+        <button 
+          onClick={() => { window.location.reload(); }}
+          style={{ padding: '12px 24px', background: 'var(--primary-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          Reload App
+        </button>
+      </div>
+    );
   }
 
   return (

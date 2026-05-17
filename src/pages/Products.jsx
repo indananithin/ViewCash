@@ -61,7 +61,6 @@ const Products = () => {
     
     // Simulate watching an ad
     adsWatchedToday += 1;
-    setToastMessage(`Ad progress [${adsWatchedToday}/${adsRequiredPerTicket}]`);
     
     let newTickets = tickets;
     let newDaysClaimed = daysClaimed;
@@ -97,8 +96,23 @@ const Products = () => {
            console.error("Error creating streak notification:", e);
          }
       } else {
-         alert(`You have watched all ads for today and earned a ticket for ${product.title} and 1 coin!`);
+         setCongratsState({
+           isOpen: true,
+           title: '🎉 Ticket Earned!',
+           message: `Ticket earned successfully! and 1 coin earned!`,
+           ticketsEarned: 1,
+           coinsEarned: 1
+         });
       }
+    } else {
+      const remainingTickets = 6 - (daysClaimed % 6);
+      setCongratsState({
+        isOpen: true,
+        title: '📺 Ad Watched!',
+        message: `Ad watched ! Progress [${adsWatchedToday}/${adsRequiredPerTicket}]\nEarn ${remainingTickets} more tickets to get 3 free tickets ! And get qualified for draw`,
+        ticketsEarned: 0,
+        coinsEarned: 0
+      });
     }
     
     const updatedProductData = {
@@ -320,11 +334,7 @@ const Products = () => {
                 streakMessage = "Congratulations! You have qualified for 3 tickets.";
               } else {
                 const remainingDays = 6 - qualifyingDaysDisplay;
-                if (remainingDays === 6) {
-                  streakMessage = "Watch ads (6) days to get qualified for 3 more tickets";
-                } else {
-                  streakMessage = `Watch ${remainingDays} more day${remainingDays > 1 ? 's' : ''} to get qualified for 3 more tickets`;
-                }
+                streakMessage = `Earn ${remainingDays} more tickets to get 3 FREE tickets! and qualify for draw`;
               }
               
               return (
@@ -375,12 +385,12 @@ const Products = () => {
                         🎯 Progress: {qualifyingDaysDisplay}/{qualifyingTarget} tickets ({(qualifyingDaysDisplay / qualifyingTarget * 100).toFixed(0)}%)
                       </p>
                       <p style={{ 
-                        color: isQualifiedForBonus ? '#059669' : '#C2410C', 
+                        color: isQualifiedForBonus ? '#059669' : '#3B82F6', 
                         fontSize: '13px', 
                         fontWeight: 'bold',
                         marginTop: '4px'
                       }}>
-                        {isQualifiedForBonus ? '🥳' : '⚡'} {streakMessage}
+                        {isQualifiedForBonus ? '🥳' : '🎁'} {streakMessage}
                       </p>
                     </div>
                   </div>
@@ -600,46 +610,49 @@ const Products = () => {
               fontSize: '14px', 
               color: '#6B7280', 
               lineHeight: '1.6', 
-              marginBottom: '24px' 
+              marginBottom: '24px',
+              whiteSpace: 'pre-wrap'
             }}>
               {congratsState.message}
             </p>
 
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center',
-              marginBottom: '24px'
-            }}>
+            {(congratsState.ticketsEarned > 0 || congratsState.coinsEarned > 0) && (
               <div style={{
-                flex: 1,
-                background: '#FEF3C7',
-                border: '1px solid #FDE68A',
-                borderRadius: '16px',
-                padding: '12px',
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px'
+                gap: '12px',
+                justifyContent: 'center',
+                marginBottom: '24px'
               }}>
-                <span style={{ fontSize: '20px' }}>🎫</span>
-                <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+3 Tickets</span>
+                <div style={{
+                  flex: 1,
+                  background: '#FEF3C7',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '16px',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <span style={{ fontSize: '20px' }}>🎫</span>
+                  <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+{congratsState.ticketsEarned} Ticket{congratsState.ticketsEarned > 1 ? 's' : ''}</span>
+                </div>
+                <div style={{
+                  flex: 1,
+                  background: '#FEF3C7',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '16px',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <span style={{ fontSize: '20px' }}>🪙</span>
+                  <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+{congratsState.coinsEarned} Coin{congratsState.coinsEarned > 1 ? 's' : ''}</span>
+                </div>
               </div>
-              <div style={{
-                flex: 1,
-                background: '#FEF3C7',
-                border: '1px solid #FDE68A',
-                borderRadius: '16px',
-                padding: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <span style={{ fontSize: '20px' }}>🪙</span>
-                <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#B45309' }}>+3 Coins</span>
-              </div>
-            </div>
+            )}
 
             <button 
               onClick={() => setCongratsState(prev => ({ ...prev, isOpen: false }))}
