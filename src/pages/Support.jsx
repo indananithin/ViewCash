@@ -50,7 +50,7 @@ const Support = () => {
               </div>
               <div style={{ flex: 1 }}>
                 <h4 style={{ color: 'var(--text-main)', margin: 0 }}>Email Support</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '4px 0 0 0' }}>indananithin79@gmail.com</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '4px 0 0 0' }}>Get a response within 24h</p>
               </div>
               <ChevronRight size={18} color="#9CA3AF" />
             </div>
