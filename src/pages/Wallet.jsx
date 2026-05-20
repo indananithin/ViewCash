@@ -133,7 +133,7 @@ const Wallet = () => {
         </form>
       </div>
 
-      <div className="withdrawal-rules-card" style={{ background: 'var(--bg-info-orange)', padding: '16px', borderRadius: 'var(--border-radius-md)', marginBottom: '24px', borderLeft: '4px solid var(--primary-orange)' }}>
+      <div className="withdrawal-rules-card" style={{ background: 'var(--bg-info-orange)', padding: '16px', borderRadius: 'var(--border-radius-md)', marginBottom: '16px', borderLeft: '4px solid var(--primary-orange)' }}>
         <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', marginBottom: '8px', fontSize: '15px' }}>
           <CheckCircle size={16} /> Redemption Rules
         </h4>

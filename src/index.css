@@ -83,7 +83,7 @@ body {
   width: 100%;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   overscroll-behavior-x: none;
 }
 
@@ -116,7 +116,7 @@ a {
 
 /* Utilities */
 .page-container {
-  padding: calc(var(--safe-area-top) + var(--padding-page)) 0 calc(var(--safe-area-bottom) + var(--bottom-nav-height) + 20px);
+  padding: calc(var(--safe-area-top) + 12px) 0 calc(var(--safe-area-bottom) + var(--bottom-nav-height) + 20px);
   min-height: 100vh;
   animation: fadeIn 0.4s ease-out forwards;
 }
@@ -126,7 +126,7 @@ a {
 }
 
 .page-header {
-  padding: 0 var(--padding-page) 12px;
+  padding: 0 var(--padding-page) 8px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -138,10 +138,10 @@ a {
 }
 
 .page-divider-strip {
-  height: 12px;
-  background: #f1f5f9; /* Light grey strip like in the pic */
+  height: 4px;
+  background: #e2e8f0; /* Thinner, softer divider strip */
   width: 100%;
-  margin: 8px 0 20px;
+  margin: 4px 0 12px;
 }
 
 .back-btn {
