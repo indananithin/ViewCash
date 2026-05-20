@@ -30,6 +30,8 @@ const Products = () => {
   });
   const [isAdPaused, setIsAdPaused] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [activeBanner, setActiveBanner] = useState(null);
+  const [bannersLoading, setBannersLoading] = useState(true);
 
   const handleWatchAd = async (product) => {
     if (!user) return;
@@ -283,6 +285,25 @@ const Products = () => {
     return () => unsub();
   }, [user?.lastCheckedNotifications, user?.uid]);
 
+  useEffect(() => {
+    const unsubBanners = onSnapshot(collection(db, 'banners'), (snap) => {
+      const banners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const activeList = banners.filter(b => b.active === true);
+      // Sort by createdAt descending
+      activeList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (activeList.length > 0) {
+        setActiveBanner(activeList[0]);
+      } else {
+        setActiveBanner(null);
+      }
+      setBannersLoading(false);
+    }, (error) => {
+      console.error("Error fetching banners:", error);
+      setBannersLoading(false);
+    });
+    return () => unsubBanners();
+  }, []);
+
   if (loading) {
     return <div className="page-container" style={{padding: '20px', textAlign: 'center'}}>Loading products...</div>;
   }
@@ -324,6 +345,13 @@ const Products = () => {
       <div className="page-divider-strip"></div>
 
       <div className="page-content-inner">
+        {activeBanner && (
+          <div className="banner-ad-container" onClick={() => window.open(activeBanner.targetUrl, '_blank')}>
+            <img src={activeBanner.imageUrl} alt={activeBanner.title} className="banner-ad-img" />
+            <div className="banner-ad-badge">Ad</div>
+          </div>
+        )}
+
         <div className="section-header" style={{ marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             🎟️ Active Products

@@ -79,6 +79,7 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
   transition: transform 0.2s ease;
+  height: 98px; /* Enforce uniform size and area across all explore sections */
 }
 
 .explore-card:active {
