@@ -96,13 +96,26 @@ function App() {
     }
   };
 
-  // Ensure device status bar/notification bar consistently uses #F4F7FE with dark high-contrast icons
+  // Handle stable orange status bar and app loading background transitions
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute('content', '#F4F7FE');
+      meta.setAttribute('content', '#FF8008');
     }
-  }, []);
+
+    if (showSplash || notificationPermission === 'default') {
+      document.documentElement.classList.remove('app-loaded');
+      document.body.classList.remove('app-loaded');
+    } else {
+      document.documentElement.classList.add('app-loaded');
+      document.body.classList.add('app-loaded');
+    }
+
+    return () => {
+      document.documentElement.classList.remove('app-loaded');
+      document.body.classList.remove('app-loaded');
+    };
+  }, [showSplash, notificationPermission]);
 
   // Keep showing splash if it's default
   if (showSplash || notificationPermission === 'default') {
