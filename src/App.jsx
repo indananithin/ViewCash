@@ -98,7 +98,7 @@ function App() {
       meta.setAttribute('content', '#FF8008');
     }
 
-    if (showSplash || notificationPermission === 'default') {
+    if (showSplash || loading || notificationPermission === 'default') {
       document.documentElement.classList.remove('app-loaded');
       document.body.classList.remove('app-loaded');
     } else {
@@ -110,7 +110,7 @@ function App() {
       document.documentElement.classList.remove('app-loaded');
       document.body.classList.remove('app-loaded');
     };
-  }, [showSplash, notificationPermission]);
+  }, [showSplash, loading, notificationPermission]);
 
   // Keep showing splash if it's default or still loading auth state
   if (showSplash || loading || notificationPermission === 'default') {
