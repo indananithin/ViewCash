@@ -6,6 +6,7 @@ import { collection, getDocs, doc, updateDoc, increment, onSnapshot, addDoc, que
 import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass, AlertTriangle, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/ConfirmModal';
+import PullToRefresh from '../components/PullToRefresh';
 import './Products.css';
 
 // Google AdMob Smart Banner Unit
@@ -105,6 +106,18 @@ const Products = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleReload = () => {
+    setIsRefreshing(true);
+    // Increment retryCount to force the onSnapshot to re-evaluate or sync
+    setRetryCount(prev => prev + 1);
+    
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setToastMessage("Products updated!");
+    }, 1200);
+  };
   const [adState, setAdState] = useState({
     isOpen: false,
     timeLeft: 30,
@@ -381,7 +394,8 @@ const Products = () => {
   }
 
   return (
-    <div className="products-container page-container">
+    <PullToRefresh onRefresh={handleReload}>
+      <div className="products-container page-container">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button className="back-btn" onClick={() => navigate('/')}>
@@ -433,9 +447,16 @@ const Products = () => {
               <button 
                 className="btn-buy" 
                 style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px' }} 
-                onClick={() => window.location.reload()}
+                onClick={handleReload}
+                disabled={isRefreshing}
               >
-                <RefreshCw size={16} /> Reload Now
+                <RefreshCw 
+                  size={16} 
+                  style={{
+                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+                  }} 
+                /> 
+                {isRefreshing ? "Refreshing..." : "Reload Now"}
               </button>
             </div>
           ) : (
@@ -806,7 +827,8 @@ const Products = () => {
         </div>,
         document.body
       )}
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 

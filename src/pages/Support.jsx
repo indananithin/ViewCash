@@ -43,14 +43,14 @@ const Support = () => {
             </div>
           </a>
 
-          <a href="mailto:support@viewcash.app" style={{ textDecoration: 'none' }}>
+          <a href="mailto:indananithin79@gmail.com" style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ width: '40px', height: '40px', background: '#3B82F6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                 <Mail size={24} />
               </div>
               <div style={{ flex: 1 }}>
                 <h4 style={{ color: 'var(--text-main)', margin: 0 }}>Email Support</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '4px 0 0 0' }}>Get a response within 24h</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '4px 0 0 0' }}>indananithin79@gmail.com</p>
               </div>
               <ChevronRight size={18} color="#9CA3AF" />
             </div>

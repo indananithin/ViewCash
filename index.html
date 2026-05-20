@@ -6,15 +6,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>ViewCash - Watch. Win. Redeem.</title>
     <meta name="description" content="A modern rewards and lucky draw app where users earn tickets, participate in draws, and redeem rewards securely." />
-    <meta name="theme-color" content="#F4F7FE" />
+    <meta name="theme-color" content="#FF8008" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      html, body {
+        background: linear-gradient(135deg, #FFC837 0%, #FF8008 100%);
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+      }
+      .preloader-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      .preloader-logo-container {
+        text-align: center;
+        animation: preloader-pulse 2s infinite ease-in-out;
+      }
+      .preloader-logo-text {
+        font-size: 36px;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        letter-spacing: 1px;
+        color: white;
+      }
+      .preloader-tagline {
+        font-size: 16px;
+        font-weight: 500;
+        opacity: 0.9;
+        color: white;
+        margin: 0;
+      }
+      .preloader-loader {
+        margin-top: 40px;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: preloader-spin 1s ease-in-out infinite;
+      }
+      @keyframes preloader-spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes preloader-pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="preloader-container">
+        <div class="preloader-logo-container">
+          <h1 class="preloader-logo-text">ViewCash</h1>
+          <p class="preloader-tagline">Watch. Win. Redeem.</p>
+        </div>
+        <div class="preloader-loader"></div>
+      </div>
+    </div>
     <div id="recaptcha-container"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'ViewCash',
         short_name: 'ViewCash',
         description: 'Watch. Win. Redeem.',
-        theme_color: '#FACC15',
-        background_color: '#ffffff',
+        theme_color: '#FF8008',
+        background_color: '#FF8008',
         display: 'standalone',
         icons: [
           {
