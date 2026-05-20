@@ -1,6 +1,8 @@
 import React from 'react';
 
-const Logo = ({ size = 60, showText = true, className = "" }) => {
+const Logo = ({ size = 60, showText = true, className = "", variant = "colored" }) => {
+  const isWhite = variant === "white";
+
   return (
     <div className={`logo-wrapper ${className}`} style={{ 
       display: 'flex', 
@@ -11,19 +13,24 @@ const Logo = ({ size = 60, showText = true, className = "" }) => {
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           {/* Subtle Background Glow */}
-          <circle cx="50" cy="50" r="48" fill="url(#vc_pro_glow)" />
+          <circle cx="50" cy="50" r="48" fill={isWhite ? "rgba(255,255,255,0.15)" : "url(#vc_pro_glow)"} />
           
           {/* Sleek Eye Path (View) */}
-          <path d="M12 50C12 50 28 28 50 28C72 28 88 50 88 50C88 50 72 72 50 72C28 72 12 50 12 50Z" stroke="var(--primary-orange)" strokeWidth="4" strokeLinecap="round" />
+          <path 
+            d="M12 50C12 50 28 28 50 28C72 28 88 50 88 50C88 50 72 72 50 72C28 72 12 50 12 50Z" 
+            stroke={isWhite ? "white" : "var(--primary-orange)"} 
+            strokeWidth={isWhite ? "3.5" : "4"} 
+            strokeLinecap="round" 
+          />
           
           {/* Centered Premium Coin (Cash) */}
-          <circle cx="50" cy="50" r="22" fill="url(#vc_pro_coin)" />
+          <circle cx="50" cy="50" r="22" fill={isWhite ? "rgba(255,255,255,0.9)" : "url(#vc_pro_coin)"} />
           
           {/* Refined Rupee Symbol */}
-          <text x="50" y="59" textAnchor="middle" fill="white" style={{ 
+          <text x="50" y="59" textAnchor="middle" fill={isWhite ? "#FF8008" : "white"} style={{ 
             fontSize: '24px', 
             fontWeight: '800', 
-            fontFamily: 'Inter, system-ui, sans-serif'
+            fontFamily: 'system-ui, -apple-system, sans-serif'
           }}>₹</text>
 
           <defs>
@@ -43,11 +50,11 @@ const Logo = ({ size = 60, showText = true, className = "" }) => {
           <h1 style={{ 
             fontSize: size * 0.35, 
             margin: 0, 
-            color: 'var(--text-main)', 
-            fontWeight: '700',
+            color: isWhite ? "white" : "var(--text-main)", 
+            fontWeight: '800',
             letterSpacing: '-0.5px'
           }}>
-            View<span style={{ color: 'var(--primary-orange)' }}>Cash</span>
+            View<span style={{ color: isWhite ? "rgba(255,255,255,0.85)" : "var(--primary-orange)" }}>Cash</span>
           </h1>
         </div>
       )}

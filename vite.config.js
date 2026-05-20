@@ -17,12 +17,11 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         runtimeCaching: [
           {
-            // NetworkFirst for HTML navigation — get latest index.html, fallback to cache if offline
+            // StaleWhileRevalidate for HTML navigation — instantly serve cached HTML, update in background
             urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
-              networkTimeoutSeconds: 3,
-              cacheName: 'html-cache-v2',
+              cacheName: 'html-cache-v3',
               cacheableResponse: {
                 statuses: [0, 200],
               },
