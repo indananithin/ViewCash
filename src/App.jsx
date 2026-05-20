@@ -72,20 +72,6 @@ function App() {
     }
   }, [showSplash, loading]);
 
-  // Dynamic theme-color meta tag to style device status bar/notification bar properly
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (!meta) return;
-
-    if (showSplash || notificationPermission === 'default') {
-      // Splash/Loading state: match the orange splash screen color
-      meta.setAttribute('content', '#FF8008');
-    } else {
-      // Normal pages: match the soft blue-gray background
-      meta.setAttribute('content', '#F4F7FE');
-    }
-  }, [showSplash, notificationPermission]);
-
   const [notificationPermission, setNotificationPermission] = useState(() => {
     return ("Notification" in window) ? Notification.permission : 'granted';
   });
@@ -109,6 +95,20 @@ function App() {
       setNotificationPermission('granted');
     }
   };
+
+  // Dynamic theme-color meta tag to style device status bar/notification bar properly
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+
+    if (showSplash || notificationPermission === 'default') {
+      // Splash/Loading state: match the orange splash screen color
+      meta.setAttribute('content', '#FF8008');
+    } else {
+      // Normal pages: match the soft blue-gray background
+      meta.setAttribute('content', '#F4F7FE');
+    }
+  }, [showSplash, notificationPermission]);
 
   // Keep showing splash if it's default
   if (showSplash || notificationPermission === 'default') {
