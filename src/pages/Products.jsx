@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, updateDoc, increment, onSnapshot, addDoc } from 'firebase/firestore';
-import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass, AlertTriangle } from 'lucide-react';
+import { collection, getDocs, doc, updateDoc, increment, onSnapshot, addDoc, query, orderBy, limit } from 'firebase/firestore';
+import { PlayCircle, Clock, Calendar, Gift, X, RefreshCw, ArrowLeft, Target, Sparkles, Hourglass, AlertTriangle, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/ConfirmModal';
 import './Products.css';
@@ -12,6 +12,7 @@ const Products = () => {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const [adState, setAdState] = useState({
@@ -270,17 +271,54 @@ const Products = () => {
     return () => unsub();
   }, [retryCount]);
 
+  useEffect(() => {
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(50));
+    const unsub = onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(d => d.data());
+      const filtered = docs.filter(n => !n.userId || n.userId === user?.uid);
+      const lastChecked = user?.lastCheckedNotifications || new Date(0).toISOString();
+      const count = filtered.filter(n => n.createdAt > lastChecked).length;
+      setUnreadCount(count);
+    });
+    return () => unsub();
+  }, [user?.lastCheckedNotifications, user?.uid]);
+
   if (loading) {
     return <div className="page-container" style={{padding: '20px', textAlign: 'center'}}>Loading products...</div>;
   }
 
   return (
     <div className="products-container page-container">
-      <header className="page-header">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          <ArrowLeft size={24} />
+      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button className="back-btn" onClick={() => navigate('/')}>
+            <ArrowLeft size={24} />
+          </button>
+          <h2 style={{ margin: 0 }}>Products</h2>
+        </div>
+        <button 
+          onClick={() => navigate('/notifications')} 
+          style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+        >
+          <Bell size={24} color="#666" />
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '0px',
+              right: '0px',
+              background: '#EF4444',
+              color: 'white',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              width: '16px',
+              height: '16px',
+              borderRadius: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>{unreadCount}</span>
+          )}
         </button>
-        <h2>Products</h2>
       </header>
 
       <div className="page-divider-strip"></div>
