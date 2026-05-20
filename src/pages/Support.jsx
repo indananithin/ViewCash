@@ -43,6 +43,7 @@ const Support = () => {
             </div>
           </a>
 
+          {/* Email Support hidden for now - can be updated and re-enabled later
           <a href="mailto:indananithin79@gmail.com" style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ width: '40px', height: '40px', background: '#3B82F6', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
@@ -55,6 +56,7 @@ const Support = () => {
               <ChevronRight size={18} color="#9CA3AF" />
             </div>
           </a>
+          */}
         </div>
 
         <section className="faq-section">
