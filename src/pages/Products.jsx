@@ -8,6 +8,96 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmModal from '../components/ConfirmModal';
 import './Products.css';
 
+// Google AdMob Smart Banner Unit
+// Collapses completely to 0px height if no ad is filled.
+// Re-polls and re-loads every 5 seconds if the slot remains empty.
+const AdMobBanner = () => {
+  const [adKey, setAdKey] = useState(0);
+  const [isAdLoaded, setIsAdLoaded] = useState(false);
+  const insRef = React.useRef(null);
+
+  // Dynamically load Google AdMob / AdSense script on mount
+  useEffect(() => {
+    if (!document.querySelector('script[src*="adsbygoogle.js"]')) {
+      const script = document.createElement('script');
+      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3940256099942544"; // Replace with your publisher client ID
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      document.head.appendChild(script);
+    }
+  }, []);
+
+  // Initialize and observe standard responsive ads
+  useEffect(() => {
+    setIsAdLoaded(false);
+
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+      console.warn("AdMob script push warning:", e);
+    }
+
+    const targetIns = insRef.current;
+    if (!targetIns) return;
+
+    let reloadTimeout = null;
+
+    // Observe changes in Google ins attributes to handle collapse & reload
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes') {
+          const status = targetIns.getAttribute('data-ad-status');
+          const style = targetIns.getAttribute('style') || '';
+
+          if (status === 'unfilled' || style.includes('display: none')) {
+            setIsAdLoaded(false);
+            
+            // Reload by mounting a fresh ins element after 5 seconds if no ad returned
+            if (!reloadTimeout) {
+              reloadTimeout = setTimeout(() => {
+                setAdKey(prev => prev + 1);
+              }, 5000);
+            }
+          } else if (status === 'filled') {
+            setIsAdLoaded(true);
+            if (reloadTimeout) {
+              clearTimeout(reloadTimeout);
+              reloadTimeout = null;
+            }
+          }
+        }
+      });
+    });
+
+    observer.observe(targetIns, {
+      attributes: true,
+      attributeFilter: ['style', 'data-ad-status']
+    });
+
+    return () => {
+      observer.disconnect();
+      if (reloadTimeout) clearTimeout(reloadTimeout);
+    };
+  }, [adKey]);
+
+  return (
+    <div className={`banner-ad-container ${isAdLoaded ? 'loaded' : 'collapsed'}`}>
+      <ins
+        key={adKey}
+        ref={insRef}
+        className="adsbygoogle"
+        style={{ display: 'block', width: '100%', height: '90px' }}
+        data-ad-client="ca-pub-3940256099942544" // Google AdMob/AdSense Test Publisher ID. Replace with ca-pub-XXXXXXXXXXXXXXXX.
+        data-ad-slot="2904096689"                 // Google test banner slot ID. Replace with your active slot ID.
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+      {isAdLoaded && <div className="banner-ad-badge">Ad</div>}
+    </div>
+  );
+};
+
+
 const Products = () => {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
@@ -30,8 +120,7 @@ const Products = () => {
   });
   const [isAdPaused, setIsAdPaused] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [activeBanner, setActiveBanner] = useState(null);
-  const [bannersLoading, setBannersLoading] = useState(true);
+
 
   const handleWatchAd = async (product) => {
     if (!user) return;
@@ -285,24 +374,7 @@ const Products = () => {
     return () => unsub();
   }, [user?.lastCheckedNotifications, user?.uid]);
 
-  useEffect(() => {
-    const unsubBanners = onSnapshot(collection(db, 'banners'), (snap) => {
-      const banners = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const activeList = banners.filter(b => b.active === true);
-      // Sort by createdAt descending
-      activeList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      if (activeList.length > 0) {
-        setActiveBanner(activeList[0]);
-      } else {
-        setActiveBanner(null);
-      }
-      setBannersLoading(false);
-    }, (error) => {
-      console.error("Error fetching banners:", error);
-      setBannersLoading(false);
-    });
-    return () => unsubBanners();
-  }, []);
+
 
   if (loading) {
     return <div className="page-container" style={{padding: '20px', textAlign: 'center'}}>Loading products...</div>;
@@ -345,12 +417,7 @@ const Products = () => {
       <div className="page-divider-strip"></div>
 
       <div className="page-content-inner">
-        {activeBanner && (
-          <div className="banner-ad-container" onClick={() => window.open(activeBanner.targetUrl, '_blank')}>
-            <img src={activeBanner.imageUrl} alt={activeBanner.title} className="banner-ad-img" />
-            <div className="banner-ad-badge">Ad</div>
-          </div>
-        )}
+        <AdMobBanner />
 
         <div className="section-header" style={{ marginBottom: '16px' }}>
           <h3 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>

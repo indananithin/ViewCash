@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/config';
 import { collection, addDoc, getDocs, updateDoc, doc, query, orderBy, increment, onSnapshot, deleteDoc } from 'firebase/firestore';
-import { ArrowLeft, Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package, Tv } from 'lucide-react';
+import { ArrowLeft, Users, Gift, IndianRupee, Bell, Shield, TrendingUp, CheckCircle, XCircle, PlusCircle, Trophy, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Admin.css';
 
@@ -31,12 +31,6 @@ const AdminDashboard = () => {
   const [notifMessage, setNotifMessage] = useState('');
   const [notifType, setNotifType] = useState('info');
 
-  // States for Manage Banners
-  const [bannersList, setBannersList] = useState([]);
-  const [bannerTitle, setBannerTitle] = useState('');
-  const [bannerImgUrl, setBannerImgUrl] = useState('');
-  const [bannerTargetUrl, setBannerTargetUrl] = useState('');
-
   // Real Data States
   const [usersList, setUsersList] = useState([]);
   const [withdrawalsList, setWithdrawalsList] = useState([]);
@@ -63,18 +57,11 @@ const AdminDashboard = () => {
     const unsubClaims = onSnapshot(query(collection(db, 'claims'), orderBy('claimedAt', 'desc')), (snap) => {
       setClaimsList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
-
-    // Listen to banners
-    const unsubBanners = onSnapshot(query(collection(db, 'banners'), orderBy('createdAt', 'desc')), (snap) => {
-      setBannersList(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    });
-
     return () => {
       unsubUsers();
       unsubWithdrawals();
       unsubProducts();
       unsubClaims();
-      unsubBanners();
     };
   }, []);
 
@@ -247,48 +234,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAddBanner = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setStatusMsg('');
-    try {
-      await addDoc(collection(db, 'banners'), {
-        title: bannerTitle,
-        imageUrl: bannerImgUrl,
-        targetUrl: bannerTargetUrl,
-        active: true,
-        createdAt: new Date().toISOString()
-      });
-      setStatusMsg('Banner added successfully!');
-      setBannerTitle('');
-      setBannerImgUrl('');
-      setBannerTargetUrl('');
-    } catch (err) {
-      console.error(err);
-      setStatusMsg('Error adding banner.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleToggleBannerActive = async (id, currentActive) => {
-    try {
-      await updateDoc(doc(db, 'banners', id), {
-        active: !currentActive
-      });
-    } catch (err) {
-      console.error("Error toggling banner status:", err);
-    }
-  };
-
-  const handleDeleteBanner = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this banner ad?")) return;
-    try {
-      await deleteDoc(doc(db, 'banners', id));
-    } catch (err) {
-      console.error("Error deleting banner:", err);
-    }
-  };
 
   const renderContent = () => {
     switch(activeTab) {
@@ -590,129 +535,7 @@ const AdminDashboard = () => {
             </form>
           </div>
         );
-      case 'banners':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div className="admin-form-container">
-              <h3>Add New Banner Ad</h3>
-              {statusMsg && <p style={{color: statusMsg.includes('Error') ? 'red' : 'green', marginBottom: '10px'}}>{statusMsg}</p>}
-              <form className="admin-form" onSubmit={handleAddBanner}>
-                <div className="form-group">
-                  <label>Banner Title</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. CoinDCX Offer" 
-                    value={bannerTitle} 
-                    onChange={e => setBannerTitle(e.target.value)} 
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Image URL</label>
-                  <input 
-                    type="url" 
-                    placeholder="e.g. https://example.com/banner.jpg" 
-                    value={bannerImgUrl} 
-                    onChange={e => setBannerImgUrl(e.target.value)} 
-                    required 
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Target URL (Link to open)</label>
-                  <input 
-                    type="url" 
-                    placeholder="e.g. https://coindcx.com" 
-                    value={bannerTargetUrl} 
-                    onChange={e => setBannerTargetUrl(e.target.value)} 
-                    required 
-                  />
-                </div>
-                <button type="submit" className="btn-submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Adding...' : 'Add Banner'}
-                </button>
-              </form>
-            </div>
 
-            <div className="admin-table-container">
-              <h3>Existing Banners</h3>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Preview</th>
-                    <th>Title</th>
-                    <th>Target Link</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bannersList.map(b => (
-                    <tr key={b.id}>
-                      <td>
-                        <img 
-                          src={b.imageUrl} 
-                          alt={b.title} 
-                          style={{ width: '120px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
-                          onError={(e) => { e.target.src = 'https://placehold.co/120x40?text=Invalid+Image'; }}
-                        />
-                      </td>
-                      <td style={{ fontWeight: 'bold' }}>{b.title}</td>
-                      <td>
-                        <a href={b.targetUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#FF8008', textDecoration: 'underline', wordBreak: 'break-all' }}>
-                          {b.targetUrl}
-                        </a>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${b.active ? 'claimed' : 'processing'}`}>
-                          {b.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="action-cell" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button
-                          onClick={() => handleToggleBannerActive(b.id, b.active)}
-                          style={{
-                            background: b.active ? '#F59E0B' : '#10B981',
-                            color: 'white',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          {b.active ? 'Deactivate' : 'Activate'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBanner(b.id)}
-                          style={{
-                            background: '#EF4444',
-                            color: 'white',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {bannersList.length === 0 && (
-                    <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No banners added yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        );
       default:
         return <div>Select a tab</div>;
     }
@@ -737,7 +560,6 @@ const AdminDashboard = () => {
         <button className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}><TrendingUp size={16} /> Overview</button>
         <button className={activeTab === 'products' ? 'active' : ''} onClick={() => setActiveTab('products')}><PlusCircle size={16} /> Add Product</button>
         <button className={activeTab === 'draws' ? 'active' : ''} onClick={() => setActiveTab('draws')}><Trophy size={16} /> Add Draw</button>
-        <button className={activeTab === 'banners' ? 'active' : ''} onClick={() => setActiveTab('banners')}><Tv size={16} /> Banners</button>
         <button className={activeTab === 'notifications' ? 'active' : ''} onClick={() => setActiveTab('notifications')}><Bell size={16} /> Send Notif</button>
         <button className={activeTab === 'claims' ? 'active' : ''} onClick={() => setActiveTab('claims')}><Package size={16} /> Claims</button>
         <button className={activeTab === 'withdrawals' ? 'active' : ''} onClick={() => setActiveTab('withdrawals')}><IndianRupee size={16} /> Withdrawals</button>
