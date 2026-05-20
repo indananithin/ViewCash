@@ -96,27 +96,13 @@ function App() {
     }
   };
 
-  // Dynamic theme-color meta tag and html/body background styling to prevent early white flashes
+  // Ensure device status bar/notification bar consistently uses #F4F7FE with dark high-contrast icons
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
-    
-    if (showSplash || notificationPermission === 'default') {
-      // Splash/Loading state: match the orange splash screen color and ensure background is orange
-      if (meta) meta.setAttribute('content', '#FF8008');
-      document.documentElement.classList.remove('app-loaded');
-      document.body.classList.remove('app-loaded');
-    } else {
-      // Normal pages: match the soft blue-gray background and apply .app-loaded styles
-      if (meta) meta.setAttribute('content', '#F4F7FE');
-      document.documentElement.classList.add('app-loaded');
-      document.body.classList.add('app-loaded');
+    if (meta) {
+      meta.setAttribute('content', '#F4F7FE');
     }
-
-    return () => {
-      document.documentElement.classList.remove('app-loaded');
-      document.body.classList.remove('app-loaded');
-    };
-  }, [showSplash, notificationPermission]);
+  }, []);
 
   // Keep showing splash if it's default
   if (showSplash || notificationPermission === 'default') {
