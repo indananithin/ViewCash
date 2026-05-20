@@ -25,12 +25,7 @@ const Support = lazy(() => import('./pages/Support'));
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
-  if (loading) return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-light)' }}>
-      <div className="loader" style={{ width: '40px', height: '40px', border: '4px solid rgba(250, 204, 21, 0.2)', borderTopColor: 'var(--primary-orange)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-      <p style={{ marginTop: '16px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>Verifying account...</p>
-    </div>
-  );
+  if (loading) return <Splash />;
   
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -42,7 +37,7 @@ const ProtectedRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
-  if (loading) return <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', color: 'var(--primary-orange)' }}>Loading...</div>;
+  if (loading) return <Splash />;
   
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -117,8 +112,8 @@ function App() {
     };
   }, [showSplash, notificationPermission]);
 
-  // Keep showing splash if it's default
-  if (showSplash || notificationPermission === 'default') {
+  // Keep showing splash if it's default or still loading auth state
+  if (showSplash || loading || notificationPermission === 'default') {
     return <Splash />;
   }
 

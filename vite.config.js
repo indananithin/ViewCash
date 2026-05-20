@@ -50,9 +50,10 @@ export default defineConfig({
             type: 'image/svg+xml'
           },
           {
-            src: 'favicon.svg',
+            src: 'logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },
