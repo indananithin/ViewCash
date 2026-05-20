@@ -84,6 +84,7 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
 }
 
 /* Mobile App Wrapper to simulate Android look on Web */

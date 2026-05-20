@@ -68,10 +68,11 @@ const PullToRefresh = ({ children, onRefresh, disabled }) => {
       if (onRefresh) {
         onRefresh();
       } else {
-        // Default behavior: reload page after a small delay for visual feedback
+        // Default behavior: visual feedback only (Firebase syncs in background)
         setTimeout(() => {
-          window.location.reload();
-        }, 800);
+          setIsRefreshing(false);
+          setPullDistance(0);
+        }, 1200);
       }
     };
 
