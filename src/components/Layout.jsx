@@ -6,10 +6,8 @@ import PullToRefresh from './PullToRefresh';
 const Layout = memo(() => {
   const location = useLocation();
   
-  // Disable pull-to-refresh on specific pages
   const disabledPages = ['/wallet', '/profile', '/games'];
   const isPullDisabled = disabledPages.includes(location.pathname);
-  const hideBottomNav = ['/products'].includes(location.pathname);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
@@ -18,7 +16,7 @@ const Layout = memo(() => {
           <Outlet />
         </PullToRefresh>
       </div>
-      {!hideBottomNav && <BottomNav />}
+      <BottomNav />
     </div>
   );
 });
