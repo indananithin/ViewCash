@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">#FF8008</item>
+        <item name="colorPrimaryDark">#FF8008</item>
+        <item name="colorAccent">#FFC837</item>
+    </style>
+
+    <!--
+        Main app theme — used AFTER the splash is dismissed.
+        NoActionBar = no title bar, full immersive WebView.
+        android:windowBackground is set to the orange color so there is
+        never a white frame between splash dismissal and WebView first paint.
+    -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- CRITICAL: Orange window background prevents white flash
+             when Capacitor transitions from splash to WebView -->
+        <item name="android:windowBackground">@color/splash_bg</item>
+        <!-- Prevent white overdraw during WebView startup -->
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <!--
+        Launch theme — shown from the moment the user taps the app icon.
+        Uses Theme.SplashScreen (AndroidX SplashScreen API) as parent
+        so it works correctly on Android 12+ while also working on older versions.
+
+        The android:windowBackground = @drawable/splash sets the orange gradient
+        BEFORE the WebView has loaded a single byte. This is what eliminates
+        the white screen completely.
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- Android 11 and below: custom window background drawable -->
+        <item name="android:windowBackground">@drawable/splash</item>
+
+        <!-- AndroidX SplashScreen API: sets the background color -->
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+
+        <!-- AndroidX SplashScreen API: the icon shown in the center
+             (must be an adaptive icon or vector drawable) -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+
+        <!-- Android 12+ splash screen icon background color -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_bg</item>
+
+        <!-- Theme to apply AFTER the splash screen is dismissed.
+             This must be the main app theme (no action bar). -->
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+
+</resources>

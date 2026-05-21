@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Capacitor Android build artifacts (keep source, exclude build output)
+android/.gradle
+android/app/build
+android/build
+android/.idea
+# Keep: android/app/src/ and config files (these are our native source)

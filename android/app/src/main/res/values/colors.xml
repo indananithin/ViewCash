@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ViewCash brand orange — used as window/splash background -->
+    <color name="splash_bg">#FF8008</color>
+    <!-- Brand colors -->
+    <color name="colorPrimary">#FF8008</color>
+    <color name="colorPrimaryDark">#E06600</color>
+    <color name="colorAccent">#FFC837</color>
+</resources>
