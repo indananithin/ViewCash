@@ -1,6 +1,8 @@
 package com.viewcash.app;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.webkit.WebView;
 import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 
@@ -8,16 +10,17 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // MUST be called before super.onCreate() — this installs the
-        // AndroidX SplashScreen which shows the native branded splash
-        // from the very first frame, before any WebView content loads.
-        // On Android 12+, this bridges the OS splash to our custom theme.
-        // On Android 11 and below, our windowBackground drawable handles it.
+        // Install native splash screen BEFORE super.onCreate()
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
-
-        // Keep the splash on screen until Capacitor signals readiness.
-        // Setting this to false means dismiss immediately when ready.
         splashScreen.setKeepOnScreenCondition(() -> false);
+
+        // Enable Chrome DevTools remote debugging for this WebView.
+        // Connect via: chrome://inspect on your desktop Chrome.
+        // This lets you see JS errors causing the blank screen.
+        // IMPORTANT: Only enable in debug builds to avoid security risk in production.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
 
         super.onCreate(savedInstanceState);
     }
