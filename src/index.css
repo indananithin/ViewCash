@@ -108,6 +108,14 @@ body.app-loaded #root {
   background-color: var(--bg-light) !important;
 }
 
+/* Hide the HTML preloader once React has mounted and splash is done.
+   This fires when App.jsx adds the 'app-loaded' class to <html>.
+   The preloader and React's <Splash> look identical, so removing it
+   is completely invisible to the user — zero flicker. */
+html.app-loaded #html-preloader {
+  display: none !important;
+}
+
 /* Typography Helpers */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;

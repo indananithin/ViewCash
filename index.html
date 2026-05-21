@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>ViewCash - Watch. Win. Redeem.</title>
     <meta name="description" content="A modern rewards and lucky draw app where users earn tickets, participate in draws, and redeem rewards securely." />
-    <!-- theme-color = orange — Android WebAPK shows orange status bar + white icons immediately -->
+    <!-- Orange theme-color = Android WebAPK shows orange status bar + white icons from first frame -->
     <meta name="theme-color" content="#FF8008" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -16,125 +16,122 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      /* ── Critical: paint orange INSTANTLY before any JS or CSS loads ── */
+      /*
+       * STRATEGY: The HTML preloader is pixel-identical to what React's <Splash>
+       * component renders. React mounts into #root which sits BEHIND the preloader.
+       * When React's <Splash> is rendered, both screens look exactly the same.
+       * The preloader is then hidden with display:none — zero visible switch.
+       *
+       * The white screen is eliminated because:
+       * 1. The preloader shows instantly from HTML parse (frame 0)
+       * 2. AuthContext reads from localStorage — loading=false immediately
+       * 3. The app never shows a blank orange→white background flash
+       */
+
+      /* Paint orange on ALL root elements BEFORE any CSS/JS loads */
       html, body {
-        margin: 0; padding: 0; height: 100%;
-        background: #FF8008;            /* solid color first — no gradient flash */
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* Solid fallback first, gradient applied by index.css */
+        background: #FF8008;
         background-color: #FF8008;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      }
-      /* #root always stays orange until app-loaded class is added */
-      #root {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #FFC837 0%, #FF8008 100%);
-        background-color: #FF8008;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
-      /* ── HTML Preloader — shown before React loads ─────────────────── */
+      /* The preloader covers the entire viewport — sits above #root */
       #html-preloader {
         position: fixed;
-        inset: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
         z-index: 99999;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        /* Identical gradient to --primary-gradient in index.css */
         background: linear-gradient(135deg, #FFC837 0%, #FF8008 100%);
-        /* Smooth fade when React splash takes over */
-        transition: opacity 0.15s ease;
+        color: white;
       }
 
-      .pre-logo-anim {
-        animation: pre-pulse 2s ease-in-out infinite;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
+      /* Logo coin — same size as Logo size={100} in Splash.jsx */
       .pre-coin {
-        width: 110px;
-        height: 110px;
-        margin-bottom: 18px;
-        animation: pre-pulse 2s ease-in-out infinite;
+        width: 100px;
+        height: 100px;
+        animation: pre-pulse 2s infinite ease-in-out;
       }
 
+      /* "ViewCash" text — mirrors Logo.jsx h1 styles at size=100 */
       .pre-brand {
-        font-size: 36px;
+        margin-top: 10px;
+        font-size: 35px; /* size * 0.35 = 100 * 0.35 */
         font-weight: 800;
         letter-spacing: -0.5px;
-        color: #2B3674;
+        color: #2B3674; /* var(--text-main) */
         line-height: 1;
-        margin: 0;
         font-family: 'Inter', -apple-system, sans-serif;
       }
+      .pre-brand span { color: #FF8008; /* var(--primary-orange) */ }
 
-      .pre-brand span { color: #FF8008; }
-
-      .pre-tagline {
-        margin-top: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        color: rgba(255,255,255,0.88);
-        font-family: 'Inter', -apple-system, sans-serif;
-      }
-
-      .pre-spinner-wrap {
-        position: absolute;
-        bottom: 80px;
-      }
-
-      .pre-spinner {
-        width: 38px;
-        height: 38px;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top-color: white;
+      /* Spinner — identical to .loader in index.css / Splash.css */
+      .pre-loader {
+        margin-top: 40px;
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        animation: pre-spin 0.85s ease-in-out infinite;
+        border-top-color: white;
+        animation: pre-spin 1s ease-in-out infinite;
       }
 
-      @keyframes pre-spin   { to { transform: rotate(360deg); } }
-      @keyframes pre-pulse  {
+      @keyframes pre-spin  { to { transform: rotate(360deg); } }
+      @keyframes pre-pulse {
         0%,100% { transform: scale(1); }
-        50%     { transform: scale(1.06); }
+        50%      { transform: scale(1.06); }
       }
     </style>
   </head>
   <body>
-    <!-- Static HTML preloader — visible from frame 0, before React loads -->
-    <!-- React's Splash component will fade this out and remove it from DOM -->
+    <!--
+      HTML PRELOADER — renders before any JavaScript runs.
+      It is pixel-identical to React's <Splash> component.
+      React mounts into #root (behind this overlay).
+      index.css paints #root orange so there is never a white gap.
+      This element is hidden via display:none by the Service Worker
+      registration script below, right after React's first paint.
+    -->
     <div id="html-preloader">
-      <div class="pre-logo-anim">
-        <!-- Inline SVG coin — zero network request, renders immediately -->
-        <svg class="pre-coin" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- SVG coin: mirrors Logo.jsx colored variant exactly -->
+      <div style="position:relative;width:100px;height:100px;">
+        <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="pre-coin">
           <defs>
-            <radialGradient id="pre_glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%"   stop-color="#FFC837" stop-opacity="0.25" />
-              <stop offset="100%" stop-color="#FFC837" stop-opacity="0" />
+            <radialGradient id="hpre_glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(48)">
+              <stop stop-color="#FFC837" stop-opacity="0.2"/>
+              <stop offset="1" stop-color="#FFC837" stop-opacity="0"/>
             </radialGradient>
-            <linearGradient id="pre_coin" x1="28" y1="28" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#FFC837" />
-              <stop offset="1" stop-color="#FF8008" />
+            <linearGradient id="hpre_coin" x1="28" y1="28" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#FFC837"/>
+              <stop offset="1" stop-color="#FF8008"/>
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="48" fill="url(#pre_glow)" />
+          <!-- Glow background -->
+          <circle cx="50" cy="50" r="48" fill="url(#hpre_glow)"/>
+          <!-- Eye path stroke (orange, same as var(--primary-orange)) -->
           <path d="M12 50C12 50 28 28 50 28C72 28 88 50 88 50C88 50 72 72 50 72C28 72 12 50 12 50Z"
                 stroke="#FF8008" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="50" cy="50" r="22" fill="url(#pre_coin)" />
+          <!-- Gold gradient coin circle -->
+          <circle cx="50" cy="50" r="22" fill="url(#hpre_coin)"/>
+          <!-- White rupee symbol -->
           <text x="50" y="59" text-anchor="middle" fill="white"
                 style="font-size:24px;font-weight:800;font-family:'Inter',system-ui,sans-serif;">&#x20B9;</text>
         </svg>
-
-        <h1 class="pre-brand">View<span>Cash</span></h1>
-        <p class="pre-tagline">Watch. Win. Redeem.</p>
       </div>
-
-      <div class="pre-spinner-wrap">
-        <div class="pre-spinner"></div>
-      </div>
+      <!-- Brand name: mirrors Logo.jsx ViewCash text -->
+      <h1 class="pre-brand">View<span>Cash</span></h1>
+      <!-- Spinner: identical to .loader class -->
+      <div class="pre-loader"></div>
     </div>
 
-    <!-- React mounts here — starts invisible until splash component fades in -->
+    <!-- React mounts here — index.css makes this orange by default -->
     <div id="root"></div>
     <div id="recaptcha-container"></div>
     <script type="module" src="/src/main.jsx"></script>
