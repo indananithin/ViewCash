@@ -1,52 +1,65 @@
+/* ── Splash Screen Container ──────────────────────────────────────────── */
 .splash-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: var(--primary-gradient);
-  color: white;
+  background: linear-gradient(135deg, #FFC837 0%, #FF8008 100%);
+  /* Smooth fade-in handled by JS for zero-flash handoff */
+  transition: opacity 0.2s ease;
 }
 
-.logo-container {
-  text-align: center;
-  animation: pulse 2s infinite ease-in-out;
+/* ── Logo ─────────────────────────────────────────────────────────────── */
+.splash-logo-wrapper {
+  animation: splash-pulse 2s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.logo-image {
-  width: 140px;
-  height: 140px;
-  border-radius: 24px;
-  display: block;
-  margin: 0 auto 24px;
-  box-shadow: var(--shadow-md);
-  object-fit: cover;
-  background: white;
-}
-
-.logo-text {
-  font-size: 36px;
-  font-weight: 800;
-  margin-bottom: 8px;
-  letter-spacing: 1px;
-}
-
-.tagline {
-  font-size: 16px;
+/* ── Tagline ──────────────────────────────────────────────────────────── */
+.splash-tagline {
+  margin-top: 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
   font-weight: 500;
-  opacity: 0.9;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.88);
+  animation: splash-fade-up 0.6s ease-out 0.2s both;
 }
 
-.loader {
-  margin-top: 48px;
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+/* ── Spinner ──────────────────────────────────────────────────────────── */
+.splash-loader-wrapper {
+  position: absolute;
+  bottom: 80px;
+}
+
+.splash-loader {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
-  animation: spin 1s ease-in-out infinite;
+  border-radius: 50%;
+  animation: splash-spin 0.85s ease-in-out infinite;
 }
 
-@keyframes spin {
+/* ── Animations ───────────────────────────────────────────────────────── */
+@keyframes splash-pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes splash-spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes splash-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

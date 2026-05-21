@@ -8,27 +8,64 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Force SW to activate immediately and claim all clients — no second launch needed
       injectManifest: false,
-      includeAssets: ['favicon.svg', 'icons.svg'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'logo.png'],
       workbox: {
-        // Always fetch fresh HTML from network — prevents serving old cached white-screen HTML
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         runtimeCaching: [
           {
-            // StaleWhileRevalidate for HTML navigation — instantly serve cached HTML, update in background
+            // NetworkFirst for HTML — always try to get fresh index.html.
+            // Falls back to cache instantly if network is slow/offline.
+            // 2s timeout means: if network responds in <2s use fresh;
+            // otherwise serve cached immediately (no 4-5s blank wait).
             urlPattern: ({ request }) => request.mode === 'navigate',
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
-              cacheName: 'html-cache-v3',
+              networkTimeoutSeconds: 2,
+              cacheName: 'html-cache-v4',
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
+          {
+            // CacheFirst for Google Fonts CSS — loaded from CDN, long-lived
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-v1',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // StaleWhileRevalidate for JS/CSS assets (hashed filenames = safe)
+            urlPattern: /\.(?:js|css)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-assets-v1',
+            },
+          },
+          {
+            // CacheFirst for images
+            urlPattern: /\.(?:png|svg|jpg|jpeg|webp|gif|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-assets-v1',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
         ],
-        // Activate the new SW immediately without waiting for old tabs to close
+        // Activate new SW immediately — no stale white screen from old SW
         skipWaiting: true,
         clientsClaim: true,
       },
@@ -57,7 +94,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: false  // Disable SW in dev to avoid caching issues during development
       }
     })
   ],
@@ -67,4 +104,3 @@ export default defineConfig({
     }
   }
 })
-

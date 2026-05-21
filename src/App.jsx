@@ -22,6 +22,19 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Support = lazy(() => import('./pages/Support'));
 
+// Orange fallback — prevents any white flash during lazy route loading
+const OrangeFallback = () => (
+  <div style={{
+    display: 'flex',
+    height: '100vh',
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: 'linear-gradient(135deg, #FFC837 0%, #FF8008 100%)',
+  }}>
+    <div className="loader" style={{ width: '32px', height: '32px', borderTopColor: 'white', borderColor: 'rgba(255,255,255,0.3)' }} />
+  </div>
+);
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
@@ -44,7 +57,7 @@ const AdminRoute = ({ children }) => {
   }
   
   if (user.isAdmin !== true) {
-    return <Navigate to="/" replace />; // Redirect non-admins to home
+    return <Navigate to="/" replace />;
   }
   
   return children;
@@ -52,96 +65,45 @@ const AdminRoute = ({ children }) => {
 
 function App() {
   const { loading } = useAuth();
-  const [showSplash, setShowSplash] = useState(() => {
-    return !sessionStorage.getItem('splashShown');
+
+  // Minimum splash display time — prevents an instant flicker if auth
+  // resolves faster than the splash animation can play.
+  // Uses sessionStorage so it only blocks on FIRST open per session.
+  const [splashDone, setSplashDone] = useState(() => {
+    return sessionStorage.getItem('vcSplashDone') === '1';
   });
 
   useEffect(() => {
-    if (showSplash && !loading) {
-      // If we've determined auth status, wait a tiny bit more for branding then hide
+    if (splashDone) return;
+    // Show splash for at least 1500ms for premium branded experience,
+    // but also wait until Firebase auth has resolved (loading = false).
+    const minTime = 1500;
+    const start = Date.now();
+
+    if (!loading) {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, minTime - elapsed);
       const timer = setTimeout(() => {
-        sessionStorage.setItem('splashShown', 'true');
-        setShowSplash(false);
-      }, 200); // Super fast transition once auth is ready
+        sessionStorage.setItem('vcSplashDone', '1');
+        setSplashDone(true);
+      }, remaining);
       return () => clearTimeout(timer);
     }
-  }, [showSplash, loading]);
+  }, [loading, splashDone]);
 
-  const [notificationPermission, setNotificationPermission] = useState(() => {
-    return ("Notification" in window) ? Notification.permission : 'granted';
-  });
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        setNotificationPermission(permission);
-      }).catch(e => {
-        console.log("Request failed", e);
-      });
-    }
-  }, []);
-
-  const handleManualRequest = () => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(permission => {
-        setNotificationPermission(permission);
-      });
-    } else {
-      setNotificationPermission('granted');
-    }
-  };
-
-  // Handle stable orange status bar and app loading background transitions
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) {
-      meta.setAttribute('content', '#FF8008');
-    }
-
-    if (showSplash || loading || notificationPermission === 'default') {
-      document.documentElement.classList.remove('app-loaded');
-      document.body.classList.remove('app-loaded');
-    } else {
-      document.documentElement.classList.add('app-loaded');
-      document.body.classList.add('app-loaded');
-    }
-
-    return () => {
-      document.documentElement.classList.remove('app-loaded');
-      document.body.classList.remove('app-loaded');
-    };
-  }, [showSplash, loading, notificationPermission]);
-
-  // Keep showing splash if it's default or still loading auth state
-  if (showSplash || loading || notificationPermission === 'default') {
+  // Keep showing splash while auth is loading OR minimum time hasn't elapsed
+  if (!splashDone || loading) {
     return <Splash />;
   }
 
-  // Fallback screen if permission is denied
-  if (notificationPermission !== 'granted') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#fff', padding: '20px', textAlign: 'center' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: '64px', height: '64px', marginBottom: '20px', color: 'var(--primary-orange, #f97316)'}}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <h2 style={{ marginBottom: '10px' }}>Notifications Required</h2>
-        <p style={{ color: '#aaa', marginBottom: '20px', maxWidth: '300px', lineHeight: '1.5' }}>
-          You must allow notifications to use ViewCash. Please enable them in your device settings and reload.
-        </p>
-        <button 
-          onClick={() => { window.location.reload(); }}
-          style={{ padding: '12px 24px', background: 'var(--primary-orange, #f97316)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-        >
-          Reload App
-        </button>
-      </div>
-    );
-  }
+  // Handle stable orange status bar
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', '#FF8008');
 
   return (
     <Router>
       <ScrollToTop />
-      <Suspense fallback={<div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', background: 'var(--bg-light)' }}><div className="loader" style={{width: '30px', height: '30px'}}></div></div>}>
+      <Suspense fallback={<OrangeFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           
