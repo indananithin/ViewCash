@@ -10,6 +10,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
+    <!-- Google Fonts - Inter for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       /* CRITICAL: Set orange on ALL root elements immediately — before any JS or external CSS loads */
       html, body, #root {
@@ -19,7 +23,7 @@
         padding: 0;
         height: 100%;
         width: 100%;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
       .preloader-container {
         height: 100vh;
@@ -37,20 +41,21 @@
         font-size: 40px;
         font-weight: 800;
         margin: 0 0 6px 0;
-        letter-spacing: 1px;
-        color: white;
-        text-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        letter-spacing: -0.5px;
+        color: #2B3674;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       }
       .preloader-logo-text span {
-        color: rgba(255,255,255,0.85);
+        color: #FF8008;
       }
       .preloader-tagline {
         font-size: 15px;
         font-weight: 500;
         opacity: 0.85;
-        color: white;
+        color: rgba(255,255,255,0.9);
         margin: 0;
         letter-spacing: 0.5px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       }
       .preloader-coin {
         width: 80px;
@@ -84,10 +89,20 @@
         <div class="preloader-logo-container">
           <!-- Inline SVG logo — zero network request, renders at the exact same time as the HTML -->
           <svg class="preloader-coin" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="48" fill="rgba(255,255,255,0.15)" />
-            <path d="M12 50C12 50 28 28 50 28C72 28 88 50 88 50C88 50 72 72 50 72C28 72 12 50 12 50Z" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-            <circle cx="50" cy="50" r="22" fill="rgba(255,255,255,0.9)" />
-            <text x="50" y="59" text-anchor="middle" fill="#FF8008" style="font-size:24px;font-weight:800;font-family:system-ui,sans-serif;">&#x20B9;</text>
+            <defs>
+              <radialGradient id="pre_glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFC837" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="#FFC837" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="pre_coin" x1="28" y1="28" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FFC837" />
+                <stop offset="1" stop-color="#FF8008" />
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="48" fill="url(#pre_glow)" />
+            <path d="M12 50C12 50 28 28 50 28C72 28 88 50 88 50C88 50 72 72 50 72C28 72 12 50 12 50Z" stroke="#FF8008" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="22" fill="url(#pre_coin)" />
+            <text x="50" y="59" text-anchor="middle" fill="white" style="font-size:24px;font-weight:800;font-family:'Inter',system-ui,sans-serif;">&#x20B9;</text>
           </svg>
           <h1 class="preloader-logo-text">View<span>Cash</span></h1>
           <p class="preloader-tagline">Watch. Win. Redeem.</p>

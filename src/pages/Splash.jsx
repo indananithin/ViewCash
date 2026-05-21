@@ -6,7 +6,7 @@ import Logo from '../components/Logo';
 const Splash = () => {
   return (
     <div className="splash-container">
-      <Logo size={100} variant="white" />
+      <Logo size={100} />
       <div className="loader" style={{ marginTop: '40px' }}></div>
     </div>
   );

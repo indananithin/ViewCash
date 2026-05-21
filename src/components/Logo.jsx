@@ -30,7 +30,7 @@ const Logo = ({ size = 60, showText = true, className = "", variant = "colored" 
           <text x="50" y="59" textAnchor="middle" fill={isWhite ? "#FF8008" : "white"} style={{ 
             fontSize: '24px', 
             fontWeight: '800', 
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
           }}>₹</text>
 
           <defs>
