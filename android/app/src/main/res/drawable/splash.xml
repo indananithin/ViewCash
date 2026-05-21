@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    ViewCash Native Splash Screen — Android 11 and below
-    Orange-to-yellow gradient background matching the app brand.
-    This drawable is used as the window background during app launch,
-    which means it shows from the very first frame — before WebView loads.
--->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Background: orange gradient matching --primary-gradient in the app -->
     <item>
         <shape android:shape="rectangle">
             <gradient
@@ -15,19 +8,8 @@
                 android:angle="315"
                 android:startColor="#FFC837"
                 android:centerColor="#FF9A1E"
-                android:endColor="#FF8008" />
+                android:endColor="#FF8008"/>
         </shape>
-    </item>
-
-    <!-- ViewCash Logo icon centered on screen -->
-    <item
-        android:gravity="center"
-        android:width="160dp"
-        android:height="160dp">
-        <bitmap
-            android:src="@mipmap/ic_launcher_foreground"
-            android:gravity="center"
-            android:tileMode="disabled" />
     </item>
 
 </layer-list>

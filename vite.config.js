@@ -2,23 +2,33 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Detect if we're building for Capacitor (native APK) or web (PWA)
+// Set VITE_CAPACITOR=true in env to build for Android APK
+const isCapacitor = process.env.VITE_CAPACITOR === 'true';
+
 // https://vite.dev/config/
 export default defineConfig({
+  // CRITICAL for Capacitor: assets must use relative paths (./assets/...)
+  // because Capacitor loads from file:///android_asset/public/
+  // Without this, /assets/... paths resolve to device root = blank screen.
+  // For web PWA builds this is overridden to '/' via the build script.
+  base: isCapacitor ? './' : '/',
+
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       injectManifest: false,
       includeAssets: ['favicon.svg', 'icons.svg', 'logo.png'],
+      // Disable SW entirely when building for Capacitor.
+      // The PWA service worker intercepts fetch requests and conflicts
+      // with Capacitor's file:// WebView asset loading, causing blank screens.
+      selfDestroying: isCapacitor,
       workbox: {
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
         runtimeCaching: [
           {
-            // NetworkFirst for HTML — always try to get fresh index.html.
-            // Falls back to cache instantly if network is slow/offline.
-            // 2s timeout means: if network responds in <2s use fresh;
-            // otherwise serve cached immediately (no 4-5s blank wait).
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',
             options: {
@@ -30,14 +40,13 @@ export default defineConfig({
             },
           },
           {
-            // CacheFirst for Google Fonts CSS — loaded from CDN, long-lived
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-v1',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -45,7 +54,6 @@ export default defineConfig({
             },
           },
           {
-            // StaleWhileRevalidate for JS/CSS assets (hashed filenames = safe)
             urlPattern: /\.(?:js|css)$/,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -53,19 +61,17 @@ export default defineConfig({
             },
           },
           {
-            // CacheFirst for images
             urlPattern: /\.(?:png|svg|jpg|jpeg|webp|gif|ico)$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-assets-v1',
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },
         ],
-        // Activate new SW immediately — no stale white screen from old SW
         skipWaiting: true,
         clientsClaim: true,
       },
@@ -94,7 +100,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: false  // Disable SW in dev to avoid caching issues during development
+        enabled: false
       }
     })
   ],
